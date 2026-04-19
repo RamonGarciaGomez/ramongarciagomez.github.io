@@ -1,0 +1,14 @@
+---
+import { SITE } from "../config";
+const year = new Date().getFullYear();
+---
+<footer class="border-t border-[color:var(--color-rule)] mt-24">
+  <div class="max-w-3xl mx-auto flex flex-wrap items-center justify-between gap-3 px-6 py-8 text-sm text-[color:var(--color-muted)]">
+    <span>© {year} {SITE.author}</span>
+    <div class="flex gap-5">
+      <a class="hover:text-[color:var(--color-ink)]" href={SITE.github}>GitHub</a>
+      <a class="hover:text-[color:var(--color-ink)]" href={`mailto:${SITE.email}`}>Email</a>
+      <a class="hover:text-[color:var(--color-ink)]" href="/rss.xml">RSS</a>
+    </div>
+  </div>
+</footer>

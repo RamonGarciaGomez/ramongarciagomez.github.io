@@ -1,0 +1,38 @@
+---
+title: "StravaAI"
+description: "Auto-enriches Strava activity descriptions with AI-generated fun facts and stats, triggered by webhooks so it just happens."
+date: 2026-04-17
+status: active
+tags: ["strava", "ai", "node"]
+repo: "https://github.com/RamonGarciaGomez/strava-claude"
+---
+
+## What it does
+
+I post a lot of runs and rides to Strava. The descriptions are usually empty.
+StravaAI watches my Strava account via webhooks, and whenever I upload a new activity
+it writes a short, contextual description — a fun fact, a stat callout, or a motivational
+line — and updates the activity. It shows up in the Strava app without me doing anything.
+
+## How it works
+
+1. **OAuth**: I connect my Strava account once.
+2. **Webhook**: Strava pings the backend whenever I upload a new activity.
+3. **AI router**: The server grabs the activity data, then picks the cheapest available
+   model — Gemini 2.0 Flash first, then GPT-4o-mini, then Claude Haiku as fallback —
+   to generate a description in one of three tones (Playful, Motivational, Stats).
+4. **Update**: The generated text is written back to Strava via their API.
+
+## Stack
+
+- **Backend**: Node.js + Express
+- **Database**: libSQL (SQLite, via `@libsql/client`) — plan is to migrate to Turso when I deploy
+- **Auth**: Strava OAuth 2.0
+- **Frontend**: Vanilla HTML/CSS/JS dashboard for tone + sport filters and manual enrichment
+- **AI**: Multi-provider router with automatic fallback
+
+## Status
+
+Works end-to-end locally. Currently fixing an API key issue and then planning to deploy to
+Railway with a `strava.*` subdomain. Next after that: submit the app to Strava for review
+(required to support more than one connected athlete).

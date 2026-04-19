@@ -1,0 +1,36 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+
+const byYear = posts.reduce<Record<string, typeof posts>>((acc, p) => {
+  const y = p.data.date.getFullYear().toString();
+  (acc[y] ||= []).push(p);
+  return acc;
+}, {});
+const years = Object.keys(byYear).sort((a, b) => Number(b) - Number(a));
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+---
+<BaseLayout title="Blog" description="Writing by Ramon.">
+  <h1 class="font-serif text-3xl md:text-4xl tracking-tight mb-10">Blog</h1>
+  {years.map((y) => (
+    <section class="mb-10">
+      <h2 class="font-sans text-sm uppercase tracking-widest text-[color:var(--color-muted)] mb-4">{y}</h2>
+      <ul class="space-y-4">
+        {byYear[y].map((post) => (
+          <li>
+            <a href={`/blog/${post.id}`} class="group flex items-baseline gap-4">
+              <span class="text-sm text-[color:var(--color-muted)] w-16 shrink-0">{fmt(post.data.date)}</span>
+              <span class="font-serif text-lg group-hover:text-[color:var(--color-accent)]">{post.data.title}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</BaseLayout>

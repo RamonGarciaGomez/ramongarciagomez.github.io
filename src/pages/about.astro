@@ -1,0 +1,24 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { SITE } from "../config";
+---
+<BaseLayout title="About">
+  <article class="prose-post">
+    <h1 class="font-serif text-3xl md:text-4xl tracking-tight !mt-0">About</h1>
+    <p>
+      I’m Ramon García-Gómez. This site is where I post writing, projects, and
+      experiments — a permanent home for the stuff I make on the side of my day job.
+    </p>
+    <p>
+      I’m an avid Strava user and a relatively new developer, so a lot of what shows
+      up here is me learning in public: things I figured out, things that broke, and
+      the occasional interactive piece when a topic calls for one.
+    </p>
+    <h2>Elsewhere</h2>
+    <ul>
+      <li><a href={SITE.github}>GitHub</a></li>
+      <li><a href={`mailto:${SITE.email}`}>Email</a></li>
+      <li><a href="/rss.xml">RSS</a></li>
+    </ul>
+  </article>
+</BaseLayout>

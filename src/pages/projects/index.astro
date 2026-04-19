@@ -1,0 +1,35 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+const projects = (await getCollection("projects", ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+
+const statusColor: Record<string, string> = {
+  active: "var(--color-accent)",
+  shipped: "#2d7a4f",
+  archived: "var(--color-muted)",
+};
+---
+<BaseLayout title="Projects" description="Things Ramon is building.">
+  <h1 class="font-serif text-3xl md:text-4xl tracking-tight mb-10">Projects</h1>
+  <ul class="space-y-8">
+    {projects.map((p) => (
+      <li>
+        <a href={`/projects/${p.id}`} class="group block">
+          <div class="flex flex-wrap items-baseline gap-x-3">
+            <h2 class="font-serif text-2xl group-hover:text-[color:var(--color-accent)]">{p.data.title}</h2>
+            <span
+              class="text-xs uppercase tracking-widest"
+              style={`color: ${statusColor[p.data.status] ?? "var(--color-muted)"}`}
+            >
+              {p.data.status}
+            </span>
+          </div>
+          <p class="text-[color:var(--color-muted)] mt-2">{p.data.description}</p>
+        </a>
+      </li>
+    ))}
+  </ul>
+</BaseLayout>

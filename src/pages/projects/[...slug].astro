@@ -1,0 +1,26 @@
+---
+import { getCollection, render } from "astro:content";
+import PostLayout from "../../layouts/PostLayout.astro";
+
+export async function getStaticPaths() {
+  const projects = await getCollection("projects", ({ data }) => !data.draft);
+  return projects.map((p) => ({ params: { slug: p.id }, props: { project: p } }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+---
+<PostLayout
+  title={project.data.title}
+  description={project.data.description}
+  date={project.data.date}
+  tags={project.data.tags}
+>
+  {(project.data.link || project.data.repo) && (
+    <p class="not-prose font-sans text-sm flex gap-4 mb-6">
+      {project.data.link && <a href={project.data.link} class="text-[color:var(--color-accent)] underline underline-offset-4">Live →</a>}
+      {project.data.repo && <a href={project.data.repo} class="text-[color:var(--color-accent)] underline underline-offset-4">Repo →</a>}
+    </p>
+  )}
+  <Content />
+</PostLayout>

@@ -1,17 +1,68 @@
 ---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
 
+const posts = (await getCollection("blog", ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
+
+const projects = (await getCollection("projects", ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 ---
+<BaseLayout>
+  <section class="mb-16">
+    <h1 class="font-serif text-4xl md:text-5xl tracking-tight leading-tight">
+      Hi, I’m Ramon.
+    </h1>
+    <p class="mt-5 text-lg text-[color:var(--color-muted)] max-w-xl">
+      I write about what I’m learning, share projects I’m building, and occasionally
+      make interactive pieces when a topic deserves one.
+    </p>
+  </section>
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+  <section class="mb-16">
+    <div class="flex items-baseline justify-between mb-6">
+      <h2 class="font-sans text-sm uppercase tracking-widest text-[color:var(--color-muted)]">Recent writing</h2>
+      <a href="/blog" class="text-sm hover:text-[color:var(--color-accent)]">All posts →</a>
+    </div>
+    <ul class="space-y-5">
+      {posts.map((post) => (
+        <li>
+          <a href={`/blog/${post.id}`} class="group block">
+            <div class="flex flex-wrap items-baseline gap-x-4">
+              <h3 class="font-serif text-xl group-hover:text-[color:var(--color-accent)]">{post.data.title}</h3>
+              <span class="text-sm text-[color:var(--color-muted)]">{fmt(post.data.date)}</span>
+            </div>
+            {post.data.description && (
+              <p class="text-[color:var(--color-muted)] mt-1">{post.data.description}</p>
+            )}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section>
+    <div class="flex items-baseline justify-between mb-6">
+      <h2 class="font-sans text-sm uppercase tracking-widest text-[color:var(--color-muted)]">Projects</h2>
+      <a href="/projects" class="text-sm hover:text-[color:var(--color-accent)]">All projects →</a>
+    </div>
+    <ul class="space-y-5">
+      {projects.map((p) => (
+        <li>
+          <a href={`/projects/${p.id}`} class="group block">
+            <div class="flex flex-wrap items-baseline gap-x-4">
+              <h3 class="font-serif text-xl group-hover:text-[color:var(--color-accent)]">{p.data.title}</h3>
+              <span class="text-xs uppercase tracking-widest text-[color:var(--color-muted)]">{p.data.status}</span>
+            </div>
+            <p class="text-[color:var(--color-muted)] mt-1">{p.data.description}</p>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</BaseLayout>
