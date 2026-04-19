@@ -4,5 +4,5 @@ export const SITE = {
   author: "Ramon García-Gómez",
   url: "https://ramongarciagomez-github-io.vercel.app",
   email: "garciagomezramon@gmail.com",
-  github: "https://github.com/",
+  github: "https://github.com/RamonGarciaGomez",
 };
