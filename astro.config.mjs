@@ -7,7 +7,7 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://ramongarciagomez-github-io.vercel.app',
+  site: 'https://ramongarciagomez.com',
   integrations: [mdx(), sitemap()],
 
   vite: {
