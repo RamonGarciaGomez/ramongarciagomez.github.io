@@ -1,68 +1,199 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
+import { SITE, NOW } from "../config";
 
 const posts = (await getCollection("blog", ({ data }) => !data.draft))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-  .slice(0, 3);
+  .slice(0, 5)
+  .map((p) => ({ ...p, kind: "post" as const }));
 
 const projects = (await getCollection("projects", ({ data }) => !data.draft))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-  .slice(0, 3);
+  .slice(0, 5)
+  .map((p) => ({ ...p, kind: "project" as const }));
+
+const recent = [...posts, ...projects]
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 6);
 
 const fmt = (d: Date) =>
-  d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  d.toLocaleDateString("en-US", { year: "numeric", month: "short" });
 ---
+
 <BaseLayout>
-  <section class="mb-16">
-    <h1 class="font-serif text-4xl md:text-5xl tracking-tight leading-tight">
-      Hi, I’m Ramon.
+
+  <!-- ░░ INTRO ░░ -->
+  <section class="mb-16 pt-4">
+    <h1 class="font-serif text-5xl md:text-6xl tracking-tight leading-[1.1] mb-6">
+      Ramon<br />García-Gómez
     </h1>
-    <p class="mt-5 text-lg text-[color:var(--color-muted)] max-w-xl">
-      I write about what I’m learning, share projects I’m building, and occasionally
-      make interactive pieces when a topic deserves one.
+    <p class="text-lg md:text-xl text-[color:var(--color-muted)] max-w-lg leading-relaxed">
+      I build things, write about what I'm learning, and occasionally make
+      interactive pieces when a topic deserves more than words.
+      Based in {NOW.location}.
     </p>
   </section>
 
-  <section class="mb-16">
-    <div class="flex items-baseline justify-between mb-6">
-      <h2 class="font-sans text-sm uppercase tracking-widest text-[color:var(--color-muted)]">Recent writing</h2>
-      <a href="/blog" class="text-sm hover:text-[color:var(--color-accent)]">All posts →</a>
+  <!-- ░░ NOW STRIP ░░ -->
+  <section class="mb-16 border-y border-[color:var(--color-rule)] py-5">
+    <p class="font-sans text-xs uppercase tracking-widest text-[color:var(--color-muted)] mb-4">Now</p>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+
+      <!-- Location -->
+      <div class="flex items-start gap-3">
+        <span class="text-lg mt-0.5" aria-hidden="true">📍</span>
+        <div>
+          <p class="text-xs text-[color:var(--color-muted)] uppercase tracking-wider mb-0.5">Location</p>
+          <p class="font-sans font-medium text-sm">{NOW.location}</p>
+        </div>
+      </div>
+
+      <!-- Book -->
+      <div class="flex items-start gap-3">
+        <span class="text-lg mt-0.5" aria-hidden="true">📖</span>
+        <div>
+          <p class="text-xs text-[color:var(--color-muted)] uppercase tracking-wider mb-0.5">Reading</p>
+          {NOW.book.url ? (
+            <a
+              href={NOW.book.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="font-sans font-medium text-sm hover:text-[color:var(--color-accent)] transition-colors"
+            >
+              {NOW.book.title}
+              <span class="font-normal text-[color:var(--color-muted)]"> — {NOW.book.author}</span>
+            </a>
+          ) : (
+            <p class="font-sans font-medium text-sm">
+              {NOW.book.title}
+              <span class="font-normal text-[color:var(--color-muted)]"> — {NOW.book.author}</span>
+            </p>
+          )}
+        </div>
+      </div>
+
+      <!-- Strava -->
+      <div class="flex items-start gap-3">
+        <span class="text-lg mt-0.5" aria-hidden="true">🏃</span>
+        <div>
+          <p class="text-xs text-[color:var(--color-muted)] uppercase tracking-wider mb-0.5">This week</p>
+          {NOW.strava.weeklyKm ? (
+            <p class="font-sans font-medium text-sm">
+              {NOW.strava.weeklyKm} km
+              {NOW.strava.sport && (
+                <span class="font-normal text-[color:var(--color-muted)]"> {NOW.strava.sport}</span>
+              )}
+            </p>
+          ) : (
+            <p class="font-sans text-sm text-[color:var(--color-muted)] italic">Strava coming soon</p>
+          )}
+        </div>
+      </div>
+
     </div>
-    <ul class="space-y-5">
-      {posts.map((post) => (
-        <li>
-          <a href={`/blog/${post.id}`} class="group block">
-            <div class="flex flex-wrap items-baseline gap-x-4">
-              <h3 class="font-serif text-xl group-hover:text-[color:var(--color-accent)]">{post.data.title}</h3>
-              <span class="text-sm text-[color:var(--color-muted)]">{fmt(post.data.date)}</span>
-            </div>
-            {post.data.description && (
-              <p class="text-[color:var(--color-muted)] mt-1">{post.data.description}</p>
-            )}
-          </a>
-        </li>
-      ))}
-    </ul>
   </section>
 
+  <!-- ░░ RECENT — filterable ░░ -->
   <section>
-    <div class="flex items-baseline justify-between mb-6">
-      <h2 class="font-sans text-sm uppercase tracking-widest text-[color:var(--color-muted)]">Projects</h2>
-      <a href="/projects" class="text-sm hover:text-[color:var(--color-accent)]">All projects →</a>
+    <div class="flex items-baseline justify-between mb-6 flex-wrap gap-3">
+      <h2 class="font-sans text-sm uppercase tracking-widest text-[color:var(--color-muted)]">Recent</h2>
+      <div class="flex gap-2" id="filter-buttons">
+        {[
+          { id: "all",     label: "All"      },
+          { id: "post",    label: "Writing"  },
+          { id: "project", label: "Projects" },
+        ].map(({ id, label }) => (
+          <button
+            data-filter={id}
+            class:list={[
+              "filter-btn px-3 py-1 text-xs rounded-full border transition-colors cursor-pointer",
+              id === "all"
+                ? "border-[color:var(--color-ink)] bg-[color:var(--color-ink)] text-[color:var(--color-paper)]"
+                : "border-[color:var(--color-rule)] text-[color:var(--color-muted)] hover:border-[color:var(--color-ink)] hover:text-[color:var(--color-ink)]",
+            ]}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
-    <ul class="space-y-5">
-      {projects.map((p) => (
-        <li>
-          <a href={`/projects/${p.id}`} class="group block">
-            <div class="flex flex-wrap items-baseline gap-x-4">
-              <h3 class="font-serif text-xl group-hover:text-[color:var(--color-accent)]">{p.data.title}</h3>
-              <span class="text-xs uppercase tracking-widest text-[color:var(--color-muted)]">{p.data.status}</span>
+
+    <ul class="space-y-6" id="recent-list">
+      {recent.map((item) => (
+        <li data-kind={item.kind}>
+          <a
+            href={item.kind === "post" ? `/blog/${item.id}` : `/projects/${item.id}`}
+            class="group flex items-start gap-4"
+          >
+            <!-- type pill -->
+            <span class:list={[
+              "mt-1 shrink-0 text-xs uppercase tracking-widest px-2 py-0.5 rounded-full border",
+              item.kind === "post"
+                ? "border-[color:var(--color-rule)] text-[color:var(--color-muted)]"
+                : "border-[color:var(--color-accent)] text-[color:var(--color-accent)]",
+            ]}>
+              {item.kind === "post" ? "Post" : "Project"}
+            </span>
+
+            <!-- content -->
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                <h3 class="font-serif text-xl group-hover:text-[color:var(--color-accent)] transition-colors">
+                  {item.data.title}
+                </h3>
+                <span class="text-xs text-[color:var(--color-muted)] shrink-0">{fmt(item.data.date)}</span>
+              </div>
+              {item.data.description && (
+                <p class="text-[color:var(--color-muted)] mt-1 text-sm leading-relaxed">
+                  {item.data.description}
+                </p>
+              )}
             </div>
-            <p class="text-[color:var(--color-muted)] mt-1">{p.data.description}</p>
           </a>
         </li>
       ))}
     </ul>
+
+    <div class="mt-10 flex gap-6 text-sm">
+      <a href="/blog" class="hover:text-[color:var(--color-accent)] transition-colors">All writing →</a>
+      <a href="/projects" class="hover:text-[color:var(--color-accent)] transition-colors">All projects →</a>
+    </div>
   </section>
+
 </BaseLayout>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>(".filter-btn");
+  const items = document.querySelectorAll<HTMLLIElement>("#recent-list li");
+
+  const activeClasses = [
+    "border-[color:var(--color-ink)]",
+    "bg-[color:var(--color-ink)]",
+    "text-[color:var(--color-paper)]",
+  ];
+  const inactiveClasses = [
+    "border-[color:var(--color-rule)]",
+    "text-[color:var(--color-muted)]",
+  ];
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const filter = btn.dataset.filter!;
+
+      // update button styles
+      buttons.forEach((b) => {
+        b.classList.remove(...activeClasses);
+        b.classList.add(...inactiveClasses);
+      });
+      btn.classList.remove(...inactiveClasses);
+      btn.classList.add(...activeClasses);
+
+      // show/hide items
+      items.forEach((item) => {
+        const match = filter === "all" || item.dataset.kind === filter;
+        item.style.display = match ? "" : "none";
+      });
+    });
+  });
+</script>
