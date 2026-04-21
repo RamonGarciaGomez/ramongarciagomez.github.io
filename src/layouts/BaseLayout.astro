@@ -2,13 +2,16 @@
 import "../styles/global.css";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
+import Ticker from "../components/Ticker.astro";
 import { SITE } from "../config";
 
 interface Props {
   title?: string;
   description?: string;
+  /** Hide the Ticker/Nav for pages that want to go full-bleed (currently unused) */
+  bare?: boolean;
 }
-const { title, description = SITE.description } = Astro.props;
+const { title, description = SITE.description, bare = false } = Astro.props;
 const fullTitle = title ? `${title} — ${SITE.title}` : SITE.title;
 ---
 <!doctype html>
@@ -28,12 +31,13 @@ const fullTitle = title ? `${title} — ${SITE.title}` : SITE.title;
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
     />
   </head>
   <body class="min-h-screen flex flex-col">
-    <Nav />
-    <main class="flex-1 max-w-3xl w-full mx-auto px-6 py-12">
+    {!bare && <Ticker />}
+    {!bare && <Nav />}
+    <main class="flex-1 max-w-5xl w-full mx-auto px-6 py-10 md:py-14">
       <slot />
     </main>
     <Footer />

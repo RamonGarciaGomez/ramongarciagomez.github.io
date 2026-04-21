@@ -1,0 +1,44 @@
+---
+/**
+ * Ticker.astro
+ * Thin mono strip at the very top of every page.
+ * Shows: location · live SF time · version.
+ * Time updates client-side every second.
+ */
+import pkg from "../../package.json";
+const version = `v${pkg.version ?? "1.0.0"}`;
+---
+
+<div class="border-b border-[color:var(--color-rule)] bg-[color:var(--color-paper)]">
+  <div class="max-w-5xl mx-auto px-6 py-2 flex items-center justify-between gap-4">
+    <p class="mono text-[0.7rem] tracking-wider text-[color:var(--color-muted)] flex items-center gap-2">
+      <span class="inline-block w-1.5 h-1.5 bg-[color:var(--color-accent)]" aria-hidden="true"></span>
+      <span class="uppercase">SF</span>
+      <span aria-hidden="true">·</span>
+      <span id="ticker-clock" aria-label="Current time in San Francisco">—:— PDT</span>
+    </p>
+    <p class="mono text-[0.7rem] tracking-wider text-[color:var(--color-muted)] uppercase">
+      The Record · {version}
+    </p>
+  </div>
+</div>
+
+<script>
+  function updateClock() {
+    const el = document.getElementById("ticker-clock");
+    if (!el) return;
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Los_Angeles",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+      timeZoneName: "short",
+    });
+    // Output looks like "22:47:03 PDT" — we'll leave as-is.
+    el.textContent = formatter.format(now);
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>
