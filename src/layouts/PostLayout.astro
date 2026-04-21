@@ -42,7 +42,7 @@ const statusClass: Record<string, string> = {
   <!-- Eyebrow: section · catalog id · date -->
   <div class="pt-2 pb-6 mono text-xs uppercase tracking-widest text-[color:var(--color-muted)] flex flex-wrap gap-x-3 gap-y-1">
     <a href={section === "Writing" ? "/blog" : "/projects"} class="hover:text-[color:var(--color-accent)] transition-colors">
-      The Record · {section}
+      {section}
     </a>
     {catalog && <><span aria-hidden="true">·</span><span>{catalog}</span></>}
     <span aria-hidden="true">·</span>
