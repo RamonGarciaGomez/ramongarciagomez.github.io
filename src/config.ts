@@ -1,7 +1,7 @@
 export const SITE = {
-  title: "Ramon García-Gómez",
+  title: "Ramón Garcia Gomez",
   description: "Personal site — writing, projects, and occasional experiments.",
-  author: "Ramon García-Gómez",
+  author: "Ramón Garcia Gomez",
   url: "https://ramongarciagomez.com",
   email: "garciagomezramon@gmail.com",
   github: "https://github.com/RamonGarciaGomez",
