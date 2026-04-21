@@ -1,10 +1,10 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getCollection } from "astro:content";
+import { getNumberedEntries } from "../../lib/catalog";
 
-const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
-);
+// Get all posts with catalog IDs, then display newest first.
+const all = await getNumberedEntries("post");
+const posts = [...all].sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
 const byYear = posts.reduce<Record<string, typeof posts>>((acc, p) => {
   const y = p.data.date.getFullYear().toString();
@@ -14,23 +14,49 @@ const byYear = posts.reduce<Record<string, typeof posts>>((acc, p) => {
 const years = Object.keys(byYear).sort((a, b) => Number(b) - Number(a));
 
 const fmt = (d: Date) =>
-  d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  d.toLocaleDateString("en-US", { month: "short", day: "2-digit" }).toUpperCase();
 ---
-<BaseLayout title="Blog" description="Writing by Ramon.">
-  <h1 class="font-serif text-3xl md:text-4xl tracking-tight mb-10">Blog</h1>
-  {years.map((y) => (
-    <section class="mb-10">
-      <h2 class="font-sans text-sm uppercase tracking-widest text-[color:var(--color-muted)] mb-4">{y}</h2>
-      <ul class="space-y-4">
-        {byYear[y].map((post) => (
-          <li>
-            <a href={`/blog/${post.id}`} class="group flex items-baseline gap-4">
-              <span class="text-sm text-[color:var(--color-muted)] w-16 shrink-0">{fmt(post.data.date)}</span>
-              <span class="font-serif text-lg group-hover:text-[color:var(--color-accent)]">{post.data.title}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  ))}
+<BaseLayout title="Writing" description="Writing by Ramon García-Gómez.">
+
+  <header class="pt-4 pb-12 md:pb-16">
+    <p class="eyebrow mb-5">The Record · Writing</p>
+    <h1 class="display text-5xl md:text-7xl mb-6">Writing</h1>
+    <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
+      {posts.length} {posts.length === 1 ? "entry" : "entries"}
+      <span class="mx-2" aria-hidden="true">·</span>
+      Essays and notes, ordered newest first
+    </p>
+  </header>
+
+  <div class="border-t-2 border-[color:var(--color-ink)]"></div>
+  <div class="border-t border-[color:var(--color-ink)] mt-[2px]"></div>
+
+  <div class="pt-10 space-y-14">
+    {years.map((y) => (
+      <section>
+        <h2 class="eyebrow mb-5">{y}</h2>
+        <ul class="border-t border-[color:var(--color-rule)]">
+          {byYear[y].map((post) => (
+            <li class="border-b border-[color:var(--color-rule)]">
+              <a
+                href={`/blog/${post.id}`}
+                class="group grid grid-cols-[auto_1fr] md:grid-cols-[auto_1fr_auto] gap-x-4 md:gap-x-8 gap-y-1 py-4 md:py-5 items-baseline"
+              >
+                <span class="mono text-xs text-[color:var(--color-muted)] group-hover:text-[color:var(--color-accent)] transition-colors shrink-0">
+                  {post.catalog}
+                </span>
+                <h3 class="col-start-2 font-serif text-lg md:text-xl leading-tight group-hover:underline decoration-1 underline-offset-[5px] decoration-[color:var(--color-accent)]">
+                  {post.data.title}
+                </h3>
+                <span class="col-start-2 md:col-start-3 mono text-xs text-[color:var(--color-muted)] tracking-widest shrink-0 md:text-right">
+                  {fmt(post.data.date)}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
+
 </BaseLayout>

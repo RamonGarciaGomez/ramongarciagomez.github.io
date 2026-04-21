@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import PostLayout from "../../layouts/PostLayout.astro";
+import { getCatalogId } from "../../lib/catalog";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog", ({ data }) => !data.draft);
@@ -9,12 +10,15 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await render(post);
+const catalog = await getCatalogId("post", post.id);
 ---
 <PostLayout
   title={post.data.title}
   description={post.data.description}
   date={post.data.date}
   tags={post.data.tags}
+  catalog={catalog}
+  section="Writing"
 >
   <Content />
 </PostLayout>

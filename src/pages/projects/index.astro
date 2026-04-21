@@ -1,35 +1,68 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getCollection } from "astro:content";
+import { getNumberedEntries } from "../../lib/catalog";
 
-const projects = (await getCollection("projects", ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
-);
+const all = await getNumberedEntries("project");
+const projects = [...all].sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-const statusColor: Record<string, string> = {
-  active: "var(--color-accent)",
-  shipped: "#2d7a4f",
-  archived: "var(--color-muted)",
+const statusClass: Record<string, string> = {
+  active: "text-[color:var(--color-accent)]",
+  shipped: "text-[#2d7a4f]",
+  archived: "text-[color:var(--color-muted)]",
 };
+
+const fmt = (d: Date) =>
+  d.toLocaleDateString("en-US", { month: "short", year: "numeric" }).toUpperCase();
 ---
 <BaseLayout title="Projects" description="Things Ramon is building.">
-  <h1 class="font-serif text-3xl md:text-4xl tracking-tight mb-10">Projects</h1>
-  <ul class="space-y-8">
+
+  <header class="pt-4 pb-12 md:pb-16">
+    <p class="eyebrow mb-5">The Record · Projects</p>
+    <h1 class="display text-5xl md:text-7xl mb-6">Projects</h1>
+    <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
+      {projects.length} {projects.length === 1 ? "project" : "projects"}
+      <span class="mx-2" aria-hidden="true">·</span>
+      Things I'm building, have built, or shelved
+    </p>
+  </header>
+
+  <div class="border-t-2 border-[color:var(--color-ink)]"></div>
+  <div class="border-t border-[color:var(--color-ink)] mt-[2px]"></div>
+
+  <ul class="pt-6">
     {projects.map((p) => (
-      <li>
-        <a href={`/projects/${p.id}`} class="group block">
-          <div class="flex flex-wrap items-baseline gap-x-3">
-            <h2 class="font-serif text-2xl group-hover:text-[color:var(--color-accent)]">{p.data.title}</h2>
-            <span
-              class="text-xs uppercase tracking-widest"
-              style={`color: ${statusColor[p.data.status] ?? "var(--color-muted)"}`}
-            >
-              {p.data.status}
-            </span>
+      <li class="border-b border-[color:var(--color-rule)]">
+        <a
+          href={`/projects/${p.id}`}
+          class="group grid grid-cols-[auto_1fr] md:grid-cols-[auto_1fr_auto] gap-x-4 md:gap-x-8 gap-y-2 py-6 md:py-8 items-baseline"
+        >
+          <span class="mono text-xs text-[color:var(--color-muted)] group-hover:text-[color:var(--color-accent)] transition-colors shrink-0">
+            {p.catalog}
+          </span>
+
+          <div class="col-start-2 min-w-0">
+            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-2">
+              <h2 class="font-serif text-2xl md:text-3xl leading-tight group-hover:underline decoration-1 underline-offset-[6px] decoration-[color:var(--color-accent)]">
+                {p.data.title}
+              </h2>
+              <span class:list={[
+                "mono text-[0.7rem] uppercase tracking-widest",
+                statusClass[p.data.status] ?? "text-[color:var(--color-muted)]",
+              ]}>
+                [{p.data.status}]
+              </span>
+            </div>
+            <p class="text-[color:var(--color-muted)] text-sm md:text-base leading-relaxed max-w-2xl">
+              {p.data.description}
+            </p>
           </div>
-          <p class="text-[color:var(--color-muted)] mt-2">{p.data.description}</p>
+
+          <span class="col-start-2 md:col-start-3 mono text-xs text-[color:var(--color-muted)] tracking-widest shrink-0 md:text-right">
+            {fmt(p.data.date)}
+          </span>
         </a>
       </li>
     ))}
   </ul>
+
 </BaseLayout>

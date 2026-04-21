@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import PostLayout from "../../layouts/PostLayout.astro";
+import { getCatalogId } from "../../lib/catalog";
 
 export async function getStaticPaths() {
   const projects = await getCollection("projects", ({ data }) => !data.draft);
@@ -9,17 +10,35 @@ export async function getStaticPaths() {
 
 const { project } = Astro.props;
 const { Content } = await render(project);
+const catalog = await getCatalogId("project", project.id);
 ---
 <PostLayout
   title={project.data.title}
   description={project.data.description}
   date={project.data.date}
   tags={project.data.tags}
+  catalog={catalog}
+  section="Projects"
+  status={project.data.status}
 >
   {(project.data.link || project.data.repo) && (
-    <p class="not-prose font-sans text-sm flex gap-4 mb-6">
-      {project.data.link && <a href={project.data.link} class="text-[color:var(--color-accent)] underline underline-offset-4">Live →</a>}
-      {project.data.repo && <a href={project.data.repo} class="text-[color:var(--color-accent)] underline underline-offset-4">Repo →</a>}
+    <p class="mono text-xs uppercase tracking-widest flex gap-5 mb-10">
+      {project.data.link && (
+        <a
+          href={project.data.link}
+          class="text-[color:var(--color-accent)] hover:underline underline-offset-4"
+        >
+          → Live site
+        </a>
+      )}
+      {project.data.repo && (
+        <a
+          href={project.data.repo}
+          class="text-[color:var(--color-accent)] hover:underline underline-offset-4"
+        >
+          → Repository
+        </a>
+      )}
     </p>
   )}
   <Content />
