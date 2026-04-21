@@ -11,9 +11,9 @@ export const SITE = {
 export const NOW = {
   location: "San Francisco, CA",
   book: {
-    title: "The Righteous Mind",
-    author: "Jonathan Haidt",
-    url: "https://www.goodreads.com/book/show/11324722",
+    title: "King: A Life",
+    author: "Jonathan Eig",
+    url: "https://www.goodreads.com/book/show/57693425",
   },
   // Strava will be wired up live later — set a fallback here for now
   strava: {
