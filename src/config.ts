@@ -9,7 +9,7 @@ export const SITE = {
 
 // "Now" data — update these manually whenever things change
 export const NOW = {
-  location: "London, UK",
+  location: "San Francisco, CA",
   book: {
     title: "The Righteous Mind",
     author: "Jonathan Haidt",

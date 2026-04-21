@@ -31,67 +31,10 @@ const fmt = (d: Date) =>
     <p class="text-lg md:text-xl text-[color:var(--color-muted)] max-w-lg leading-relaxed">
       I build things, write about what I'm learning, and occasionally make
       interactive pieces when a topic deserves more than words.
-      Based in {NOW.location}.
     </p>
-  </section>
-
-  <!-- ░░ NOW STRIP ░░ -->
-  <section class="mb-16 border-y border-[color:var(--color-rule)] py-5">
-    <p class="font-sans text-xs uppercase tracking-widest text-[color:var(--color-muted)] mb-4">Now</p>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-
-      <!-- Location -->
-      <div class="flex items-start gap-3">
-        <span class="text-lg mt-0.5" aria-hidden="true">📍</span>
-        <div>
-          <p class="text-xs text-[color:var(--color-muted)] uppercase tracking-wider mb-0.5">Location</p>
-          <p class="font-sans font-medium text-sm">{NOW.location}</p>
-        </div>
-      </div>
-
-      <!-- Book -->
-      <div class="flex items-start gap-3">
-        <span class="text-lg mt-0.5" aria-hidden="true">📖</span>
-        <div>
-          <p class="text-xs text-[color:var(--color-muted)] uppercase tracking-wider mb-0.5">Reading</p>
-          {NOW.book.url ? (
-            <a
-              href={NOW.book.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="font-sans font-medium text-sm hover:text-[color:var(--color-accent)] transition-colors"
-            >
-              {NOW.book.title}
-              <span class="font-normal text-[color:var(--color-muted)]"> — {NOW.book.author}</span>
-            </a>
-          ) : (
-            <p class="font-sans font-medium text-sm">
-              {NOW.book.title}
-              <span class="font-normal text-[color:var(--color-muted)]"> — {NOW.book.author}</span>
-            </p>
-          )}
-        </div>
-      </div>
-
-      <!-- Strava -->
-      <div class="flex items-start gap-3">
-        <span class="text-lg mt-0.5" aria-hidden="true">🏃</span>
-        <div>
-          <p class="text-xs text-[color:var(--color-muted)] uppercase tracking-wider mb-0.5">This week</p>
-          {NOW.strava.weeklyKm ? (
-            <p class="font-sans font-medium text-sm">
-              {NOW.strava.weeklyKm} km
-              {NOW.strava.sport && (
-                <span class="font-normal text-[color:var(--color-muted)]"> {NOW.strava.sport}</span>
-              )}
-            </p>
-          ) : (
-            <p class="font-sans text-sm text-[color:var(--color-muted)] italic">Strava coming soon</p>
-          )}
-        </div>
-      </div>
-
-    </div>
+    <p class="mt-3 text-sm text-[color:var(--color-muted)]">
+      🌉 {NOW.location}
+    </p>
   </section>
 
   <!-- ░░ RECENT — filterable ░░ -->
