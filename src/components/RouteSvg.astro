@@ -1,0 +1,40 @@
+---
+import { polylineToSvgPath } from "../lib/polyline";
+
+interface Props {
+  polyline: string | null;
+  width?: number;
+  height?: number;
+  stroke?: number;
+  class?: string;
+}
+
+const {
+  polyline,
+  width = 120,
+  height = 40,
+  stroke = 1.5,
+  class: className = "",
+} = Astro.props;
+
+const d = polyline ? polylineToSvgPath(polyline, width, height) : null;
+---
+{d ? (
+  <svg
+    viewBox={`0 0 ${width} ${height}`}
+    width={width}
+    height={height}
+    class={className}
+    aria-hidden="true"
+    preserveAspectRatio="xMidYMid meet"
+  >
+    <path
+      d={d}
+      fill="none"
+      stroke="currentColor"
+      stroke-width={stroke}
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+) : null}

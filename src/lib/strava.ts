@@ -14,16 +14,20 @@ export interface Activity {
   moving_time_fmt: string;   // "1h 02m"
   pace_fmt: string;          // "8:08 /mi"  (blank for non-pace sports)
   elevation_ft: string;      // "465"
-  start_date_local: string;  // ISO string from Strava
+  start_date_local: string;
   date_fmt: string;          // "Apr 18"
-  strava_url: string;        // "https://www.strava.com/activities/123"
-  catalog: string;           // "A-001" (most-recent = A-001)
+  strava_url: string;
+  catalog: string;           // "A-001"
+  polyline: string | null;   // encoded summary polyline
+  gear_name: string | null;  // e.g. "Cervélo Soloist"
+  is_soloist: boolean;       // true when gear matches Cervélo Soloist
+  is_ride: boolean;          // true for bike activities
 }
 
 export interface WeeklyStats {
-  mi: string;           // "26.3"
+  mi: string;
   count: number;
-  duration_fmt: string; // "3h 47m"
+  duration_fmt: string;
 }
 
 export interface YearStats {
@@ -43,7 +47,7 @@ export type StravaSnapshot =
     }
   | { status: "error"; reason: string };
 
-// ─── Token cache (per build process) ─────────────────────────────────────────
+// ─── Token cache ──────────────────────────────────────────────────────────────
 
 let _cachedToken: string | null = null;
 
@@ -78,8 +82,6 @@ async function getAccessToken(): Promise<string> {
   _cachedToken = data.access_token as string;
   return _cachedToken!;
 }
-
-// ─── API helpers ──────────────────────────────────────────────────────────────
 
 async function stravaGet(path: string, token: string): Promise<unknown> {
   const res = await fetch(`https://www.strava.com/api/v3${path}`, {
@@ -124,30 +126,23 @@ function fmtElevationFt(meters: number): string {
   return String(Math.round(meters * 3.28084));
 }
 
-// ─── ISO week helpers (Monday–Sunday, America/Los_Angeles) ───────────────────
+// ─── Week boundaries (Mon–Sun in America/Los_Angeles) ─────────────────────────
 
 function weekBoundsUnix(): { start: number; end: number } {
   const now = new Date();
-  // Get today's date in LA time
   const laStr = now.toLocaleDateString("en-US", {
     timeZone: "America/Los_Angeles",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   });
-  // laStr is "MM/DD/YYYY"
   const [mm, dd, yyyy] = laStr.split("/").map(Number);
-  const dow = new Date(yyyy!, mm! - 1, dd!).getDay(); // 0=Sun
+  const dow = new Date(yyyy!, mm! - 1, dd!).getDay();
   const daysFromMon = (dow + 6) % 7;
 
-  // Monday midnight LA time → unix
-  const monMidnightLA = new Date(
-    Date.UTC(yyyy!, mm! - 1, dd! - daysFromMon)
-  );
-  // Apply LA offset so we get midnight in LA, not UTC
+  const monMidnightLA = new Date(Date.UTC(yyyy!, mm! - 1, dd! - daysFromMon));
   const offsetMs = getOffsetMs("America/Los_Angeles", monMidnightLA);
   const weekStart = Math.floor((monMidnightLA.getTime() - offsetMs) / 1000);
-  // Sunday 23:59:59 LA time
   const weekEnd = weekStart + 7 * 24 * 3600 - 1;
 
   return { start: weekStart, end: weekEnd };
@@ -159,22 +154,40 @@ function getOffsetMs(tz: string, date: Date): number {
   return new Date(tzStr).getTime() - new Date(utcStr).getTime();
 }
 
-// ─── Normalize raw Strava activity ───────────────────────────────────────────
+// ─── Normalize raw Strava activity ────────────────────────────────────────────
+
+const RIDE_SPORTS = new Set([
+  "Ride",
+  "VirtualRide",
+  "EBikeRide",
+  "MountainBikeRide",
+  "GravelRide",
+  "Handcycle",
+  "Velomobile",
+]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalize(raw: any, catalogIndex: number): Activity {
+function normalize(raw: any, catalogIndex: number, gearMap: Map<string, string>): Activity {
+  const sport = raw.sport_type ?? raw.type ?? "Workout";
+  const gearName = raw.gear_id ? gearMap.get(raw.gear_id) ?? null : null;
+  const soloist = gearName ? /soloist/i.test(gearName) : false;
+
   return {
     id: raw.id,
     name: raw.name,
-    sport_type: raw.sport_type ?? raw.type ?? "Workout",
+    sport_type: sport,
     distance_mi: fmtMi(raw.distance ?? 0),
     moving_time_fmt: fmtDuration(raw.moving_time ?? 0),
-    pace_fmt: fmtPace(raw.distance ?? 0, raw.moving_time ?? 0, raw.sport_type ?? ""),
+    pace_fmt: fmtPace(raw.distance ?? 0, raw.moving_time ?? 0, sport),
     elevation_ft: fmtElevationFt(raw.total_elevation_gain ?? 0),
     start_date_local: raw.start_date_local ?? raw.start_date ?? "",
     date_fmt: fmtDate(raw.start_date_local ?? raw.start_date ?? ""),
     strava_url: `https://www.strava.com/activities/${raw.id}`,
     catalog: `A-${String(catalogIndex + 1).padStart(3, "0")}`,
+    polyline: raw.map?.summary_polyline ?? null,
+    gear_name: gearName,
+    is_soloist: soloist,
+    is_ride: RIDE_SPORTS.has(sport),
   };
 }
 
@@ -185,27 +198,46 @@ export async function getStravaData(): Promise<StravaSnapshot> {
     const token = await getAccessToken();
     const athleteId = import.meta.env.STRAVA_ATHLETE_ID;
 
-    // Fetch last 60 days of activities, explicitly sorted newest first
     const sixtyDaysAgo = Math.floor(Date.now() / 1000) - 60 * 24 * 3600;
-    const [rawActivities, rawStats] = await Promise.all([
+    const [rawActivities, rawStats, rawAthlete] = await Promise.all([
       stravaGet(
-        `/athlete/activities?after=${sixtyDaysAgo}&per_page=60&sort=start_date&sort_order=desc`,
+        `/athlete/activities?after=${sixtyDaysAgo}&per_page=60`,
         token
       ) as Promise<unknown[]>,
       athleteId
         ? (stravaGet(`/athletes/${athleteId}/stats`, token) as Promise<unknown>)
         : Promise.resolve(null),
+      stravaGet("/athlete", token) as Promise<unknown>,
     ]);
 
-    // Sort newest first (defensive — Strava usually does this already)
-    const sorted = [...(rawActivities as unknown[])].sort((a, b) => {
+    // Build gear_id → name map from athlete's bikes + shoes
+    const gearMap = new Map<string, string>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const athlete = rawAthlete as any;
+    if (Array.isArray(athlete?.bikes)) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return new Date((b as any).start_date).getTime() - new Date((a as any).start_date).getTime();
-    });
+      for (const b of athlete.bikes) {
+        if (b?.id && b?.name) gearMap.set(b.id, b.name);
+      }
+    }
+    if (Array.isArray(athlete?.shoes)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const s of athlete.shoes) {
+        if (s?.id && s?.name) gearMap.set(s.id, s.name);
+      }
+    }
+
+    const sorted = [...(rawActivities as unknown[])].sort(
+      (a, b) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        new Date((b as any).start_date).getTime() -
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        new Date((a as any).start_date).getTime()
+    );
 
     const activities = sorted.map((a, i) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      normalize(a as any, i)
+      normalize(a as any, i, gearMap)
     );
 
     // ── This week ──────────────────────────────────────────────────────────
@@ -217,11 +249,13 @@ export async function getStravaData(): Promise<StravaSnapshot> {
     });
     const weekTotalM = weekActivities.reduce(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (s, a) => s + ((a as any).distance ?? 0), 0
+      (s, a) => s + ((a as any).distance ?? 0),
+      0
     );
     const weekTotalS = weekActivities.reduce(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (s, a) => s + ((a as any).moving_time ?? 0), 0
+      (s, a) => s + ((a as any).moving_time ?? 0),
+      0
     );
     const thisWeek: WeeklyStats = {
       mi: fmtMi(weekTotalM),

@@ -1,0 +1,84 @@
+---
+/**
+ * Minimalist line-art road bike (Cervélo Soloist-ish).
+ * Wheels spin on a CSS animation. Uses currentColor so it inherits
+ * the surrounding text color.
+ */
+
+interface Props {
+  class?: string;
+}
+const { class: className = "" } = Astro.props;
+---
+<figure class={`bike-soloist inline-block ${className}`} aria-label="Cervélo Soloist">
+  <svg
+    viewBox="0 0 240 130"
+    width="240"
+    height="130"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <!-- ░░ FRAME ░░ -->
+    <!-- Top tube -->
+    <line x1="75" y1="55" x2="160" y2="55" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <!-- Down tube -->
+    <line x1="75" y1="55" x2="125" y2="100" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <!-- Seat tube -->
+    <line x1="160" y1="55" x2="125" y2="100" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <!-- Seat stay -->
+    <line x1="160" y1="55" x2="195" y2="100" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <!-- Chain stay -->
+    <line x1="125" y1="100" x2="195" y2="100" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <!-- Fork -->
+    <line x1="75" y1="55" x2="55" y2="100" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+
+    <!-- Handlebar drop -->
+    <path d="M 62 42 Q 70 40 78 48" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" />
+    <!-- Stem -->
+    <line x1="70" y1="45" x2="75" y2="55" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+
+    <!-- Seat post -->
+    <line x1="160" y1="55" x2="160" y2="40" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    <!-- Saddle -->
+    <line x1="150" y1="40" x2="172" y2="40" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+
+    <!-- Pedals / crank -->
+    <circle cx="125" cy="100" r="3.5" fill="currentColor" />
+
+    <!-- ░░ WHEELS ░░ (spinning) -->
+    <g class="wheel" style="transform-origin: 55px 100px;">
+      <circle cx="55" cy="100" r="24" fill="none" stroke="currentColor" stroke-width="1.5" />
+      <!-- hub -->
+      <circle cx="55" cy="100" r="2" fill="currentColor" />
+      <!-- spokes -->
+      <line x1="55" y1="76" x2="55" y2="124" stroke="currentColor" stroke-width="0.6" />
+      <line x1="31" y1="100" x2="79" y2="100" stroke="currentColor" stroke-width="0.6" />
+      <line x1="38" y1="83" x2="72" y2="117" stroke="currentColor" stroke-width="0.6" />
+      <line x1="38" y1="117" x2="72" y2="83" stroke="currentColor" stroke-width="0.6" />
+    </g>
+
+    <g class="wheel" style="transform-origin: 195px 100px;">
+      <circle cx="195" cy="100" r="24" fill="none" stroke="currentColor" stroke-width="1.5" />
+      <circle cx="195" cy="100" r="2" fill="currentColor" />
+      <line x1="195" y1="76" x2="195" y2="124" stroke="currentColor" stroke-width="0.6" />
+      <line x1="171" y1="100" x2="219" y2="100" stroke="currentColor" stroke-width="0.6" />
+      <line x1="178" y1="83" x2="212" y2="117" stroke="currentColor" stroke-width="0.6" />
+      <line x1="178" y1="117" x2="212" y2="83" stroke="currentColor" stroke-width="0.6" />
+    </g>
+  </svg>
+  <figcaption class="mono text-[0.65rem] uppercase tracking-widest text-[color:var(--color-muted)] mt-1">
+    Cervélo Soloist
+  </figcaption>
+</figure>
+
+<style>
+  .bike-soloist .wheel {
+    animation: bike-spin 1.6s linear infinite;
+  }
+  @keyframes bike-spin {
+    to { transform: rotate(360deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bike-soloist .wheel { animation: none; }
+  }
+</style>

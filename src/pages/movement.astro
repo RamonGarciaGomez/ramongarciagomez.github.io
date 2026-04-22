@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { getStravaData } from "../lib/strava";
+import RouteSvg from "../components/RouteSvg.astro";
+import BikeSoloist from "../components/BikeSoloist.astro";
 
 const strava = await getStravaData();
 
@@ -84,10 +86,32 @@ function relativeTime(iso: string): string {
           <p class="eyebrow mb-6">Latest</p>
           <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)] mb-3">
             {strava.latest.sport_type} · {strava.latest.date_fmt} · {strava.latest.catalog}
+            {strava.latest.gear_name && (
+              <span> · {strava.latest.gear_name}</span>
+            )}
           </p>
           <h2 class="display text-4xl md:text-6xl mb-8 leading-tight">
             {strava.latest.name}
           </h2>
+
+          <!-- Route + animated bike row -->
+          <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-10 items-center mb-8">
+            {strava.latest.polyline ? (
+              <div class="text-[color:var(--color-accent)]">
+                <RouteSvg polyline={strava.latest.polyline} width={480} height={220} stroke={2} class="w-full h-auto max-w-xl" />
+              </div>
+            ) : (
+              <div class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
+                No route data for this activity
+              </div>
+            )}
+
+            {strava.latest.is_soloist && (
+              <div class="text-[color:var(--color-ink)] md:justify-self-end">
+                <BikeSoloist />
+              </div>
+            )}
+          </div>
 
           <!-- Stats grid -->
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-[color:var(--color-rule)] pt-6">
@@ -133,9 +157,9 @@ function relativeTime(iso: string): string {
                   href={activity.strava_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="group grid grid-cols-[auto_1fr_auto] gap-x-4 md:gap-x-8 gap-y-1 py-4 md:py-5 items-baseline"
+                  class="group grid grid-cols-[auto_1fr_auto_auto] gap-x-4 md:gap-x-6 gap-y-1 py-4 md:py-5 items-center"
                 >
-                  <span class="mono text-xs text-[color:var(--color-muted)] group-hover:text-[color:var(--color-accent)] transition-colors shrink-0">
+                  <span class="mono text-xs text-[color:var(--color-muted)] group-hover:text-[color:var(--color-accent)] transition-colors shrink-0 self-start mt-1">
                     {activity.catalog}
                   </span>
                   <div class="col-start-2 min-w-0">
@@ -145,9 +169,17 @@ function relativeTime(iso: string): string {
                     <p class="mono text-xs text-[color:var(--color-muted)] mt-0.5">
                       {activity.sport_type} · {activity.distance_mi} mi
                       {activity.pace_fmt && <span> · {activity.pace_fmt}</span>}
+                      {activity.is_ride && activity.gear_name && (
+                        <span> · {activity.gear_name}</span>
+                      )}
                     </p>
                   </div>
-                  <span class="col-start-3 mono text-xs text-[color:var(--color-muted)] tracking-widest shrink-0 text-right">
+                  <span class="col-start-3 text-[color:var(--color-accent)] hidden sm:block shrink-0">
+                    {activity.polyline && (
+                      <RouteSvg polyline={activity.polyline} width={120} height={40} stroke={1.2} />
+                    )}
+                  </span>
+                  <span class="col-start-4 mono text-xs text-[color:var(--color-muted)] tracking-widest shrink-0 text-right self-start mt-1">
                     {activity.date_fmt}
                   </span>
                 </a>
