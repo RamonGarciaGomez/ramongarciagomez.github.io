@@ -1,6 +1,9 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { SITE, NOW } from "../config";
+import { getStravaData } from "../lib/strava";
+
+const strava = await getStravaData();
 ---
 <BaseLayout title="About" description="About Ramón Garcia Gomez and this site.">
 
@@ -62,6 +65,22 @@ import { SITE, NOW } from "../config";
               )}
             </dd>
           </div>
+          {strava.status === "ok" && strava.latest && (
+            <div class="grid grid-cols-[auto_1fr] gap-4 items-baseline">
+              <dt class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">Moving</dt>
+              <dd class="font-serif">
+                <a
+                  href={strava.latest.strava_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="italic hover:text-[color:var(--color-accent)] transition-colors"
+                >
+                  {strava.latest.name}
+                </a>
+                <span class="not-italic text-[color:var(--color-muted)] text-sm"> · {strava.latest.date_fmt}</span>
+              </dd>
+            </div>
+          )}
         </dl>
       </div>
 

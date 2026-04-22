@@ -1,0 +1,13 @@
+name: Hourly Strava rebuild
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # every hour, on the hour (UTC)
+  workflow_dispatch:       # manual trigger from GitHub Actions UI
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Vercel deploy hook
+        run: curl -fsSL -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"

@@ -1,0 +1,169 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getStravaData } from "../lib/strava";
+
+const strava = await getStravaData();
+
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+---
+<BaseLayout title="Movement" description="Strava stats — weekly totals, year to date, and recent activities.">
+
+  <!-- ░░ HEADER ░░ -->
+  <header class="pt-4 pb-12 md:pb-16">
+    <p class="eyebrow mb-5">Movement</p>
+    <h1 class="display text-5xl md:text-7xl mb-6">Movement</h1>
+    <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
+      {strava.status === "ok"
+        ? `Live stats from Strava · Synced ${relativeTime(strava.syncedAt)}`
+        : "Stats from Strava"}
+    </p>
+  </header>
+
+  <div class="border-t-2 border-[color:var(--color-ink)]"></div>
+  <div class="border-t border-[color:var(--color-ink)] mt-[2px]"></div>
+
+  {strava.status === "error" ? (
+
+    <!-- ░░ ERROR STATE ░░ -->
+    <div class="pt-20 pb-32 text-center">
+      <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
+        Strava data unavailable · Try again soon
+      </p>
+    </div>
+
+  ) : (
+
+    <div class="pt-10 space-y-20">
+
+      <!-- ░░ THIS WEEK ░░ -->
+      <section>
+        <p class="eyebrow mb-6">This week</p>
+        <div class="flex items-baseline gap-3 mb-3">
+          <span class="display text-7xl md:text-9xl">{strava.thisWeek.km}</span>
+          <span class="font-serif italic text-2xl md:text-3xl text-[color:var(--color-muted)]">km</span>
+        </div>
+        <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
+          {strava.thisWeek.count} {strava.thisWeek.count === 1 ? "activity" : "activities"}
+          {strava.thisWeek.count > 0 && (
+            <span> · {strava.thisWeek.duration_fmt} total</span>
+          )}
+        </p>
+      </section>
+
+      <!-- ░░ YEAR TO DATE ░░ -->
+      <section>
+        <p class="eyebrow mb-6">Year to date</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+          {[
+            { label: "Running", km: strava.ytd.run.km, count: strava.ytd.run.count, unit: "runs" },
+            { label: "Cycling", km: strava.ytd.ride.km, count: strava.ytd.ride.count, unit: "rides" },
+            { label: "Swimming", km: strava.ytd.swim.km, count: strava.ytd.swim.count, unit: "swims" },
+          ].map(({ label, km, count, unit }) => (
+            <div>
+              <p class="eyebrow mb-2 text-[0.65rem]">{label}</p>
+              <p class="display text-4xl md:text-5xl">{km}</p>
+              <p class="mono text-xs text-[color:var(--color-muted)] mt-1">
+                km · {count} {unit}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- ░░ LATEST ACTIVITY ░░ -->
+      {strava.latest && (
+        <section>
+          <p class="eyebrow mb-6">Latest</p>
+          <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)] mb-3">
+            {strava.latest.sport_type} · {strava.latest.date_fmt} · {strava.latest.catalog}
+          </p>
+          <h2 class="display text-4xl md:text-6xl mb-8 leading-tight">
+            {strava.latest.name}
+          </h2>
+
+          <!-- Stats grid -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-[color:var(--color-rule)] pt-6">
+            <div>
+              <p class="eyebrow mb-1 text-[0.65rem]">Distance</p>
+              <p class="font-serif text-2xl">{strava.latest.distance_km} <span class="text-base text-[color:var(--color-muted)]">km</span></p>
+            </div>
+            {strava.latest.pace_fmt && (
+              <div>
+                <p class="eyebrow mb-1 text-[0.65rem]">Pace</p>
+                <p class="font-serif text-2xl">{strava.latest.pace_fmt}</p>
+              </div>
+            )}
+            <div>
+              <p class="eyebrow mb-1 text-[0.65rem]">Duration</p>
+              <p class="font-serif text-2xl">{strava.latest.moving_time_fmt}</p>
+            </div>
+            <div>
+              <p class="eyebrow mb-1 text-[0.65rem]">Elevation</p>
+              <p class="font-serif text-2xl">{strava.latest.elevation_m} <span class="text-base text-[color:var(--color-muted)]">m</span></p>
+            </div>
+          </div>
+
+          <a
+            href={strava.latest.strava_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-block mt-6 mono text-xs uppercase tracking-widest hover:text-[color:var(--color-accent)] transition-colors"
+          >
+            → View on Strava
+          </a>
+        </section>
+      )}
+
+      <!-- ░░ RECENT ACTIVITIES ░░ -->
+      {strava.recent.length > 0 && (
+        <section>
+          <p class="eyebrow mb-6">Recent</p>
+          <ul class="border-t border-[color:var(--color-rule)]">
+            {strava.recent.map((activity) => (
+              <li class="border-b border-[color:var(--color-rule)]">
+                <a
+                  href={activity.strava_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="group grid grid-cols-[auto_1fr_auto] gap-x-4 md:gap-x-8 gap-y-1 py-4 md:py-5 items-baseline"
+                >
+                  <span class="mono text-xs text-[color:var(--color-muted)] group-hover:text-[color:var(--color-accent)] transition-colors shrink-0">
+                    {activity.catalog}
+                  </span>
+                  <div class="col-start-2 min-w-0">
+                    <h3 class="font-serif text-lg md:text-xl leading-tight group-hover:underline decoration-1 underline-offset-[5px] decoration-[color:var(--color-accent)]">
+                      {activity.name}
+                    </h3>
+                    <p class="mono text-xs text-[color:var(--color-muted)] mt-0.5">
+                      {activity.sport_type} · {activity.distance_km} km
+                      {activity.pace_fmt && <span> · {activity.pace_fmt}</span>}
+                    </p>
+                  </div>
+                  <span class="col-start-3 mono text-xs text-[color:var(--color-muted)] tracking-widest shrink-0 text-right">
+                    {activity.date_fmt}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <!-- ░░ FOOTER NOTE ░░ -->
+      <p class="mono text-xs text-[color:var(--color-muted)] pb-4">
+        Stats fetched at build time. Site rebuilds hourly.
+      </p>
+
+    </div>
+
+  )}
+
+</BaseLayout>
