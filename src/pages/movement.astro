@@ -148,51 +148,87 @@ function relativeTime(iso: string): string {
       <section>
         <p class="eyebrow mb-8">Gear</p>
 
-        {strava.hasSoloist && (
-          <div class="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center border-t border-[color:var(--color-rule)] pt-8 pb-10">
-            <div>
-              <BikeSoloist />
+        {/* Cervélo Soloist — show when registered in Strava */}
+        {(() => {
+          const soloist = strava.bikes.find(b => /soloist/i.test(b.name));
+          return soloist ? (
+            <div class="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center border-t border-[color:var(--color-rule)] pt-8 pb-10">
+              <div><BikeSoloist /></div>
+              <div>
+                <p class="mono text-xs uppercase tracking-[0.2em] text-[color:var(--color-muted)] mb-2">Road bike · 2025</p>
+                <h3 class="display text-3xl md:text-4xl mb-4">Cervélo Soloist</h3>
+                <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm max-w-md mb-6">
+                  <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Frame</dt>
+                  <dd class="font-serif">Full carbon, truncated aero tubes</dd>
+                  <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Groupset</dt>
+                  <dd class="font-serif">SRAM Force eTap AXS</dd>
+                  <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Signature</dt>
+                  <dd class="font-serif italic">Dropped seat stays, integrated cockpit</dd>
+                </dl>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 border-t border-[color:var(--color-rule)] pt-4">
+                  <div>
+                    <p class="eyebrow text-[0.6rem] mb-1">This year</p>
+                    <p class="stat-num text-2xl">{soloist.ytd_mi}<span class="mono text-[0.6rem] uppercase tracking-widest text-[color:var(--color-muted)] ml-1">mi</span></p>
+                  </div>
+                  <div>
+                    <p class="eyebrow text-[0.6rem] mb-1">Rides</p>
+                    <p class="stat-num text-2xl">{soloist.ytd_rides}</p>
+                  </div>
+                  <div>
+                    <p class="eyebrow text-[0.6rem] mb-1">Elev · YTD</p>
+                    <p class="stat-num text-2xl">{soloist.ytd_elev_ft}<span class="mono text-[0.6rem] uppercase tracking-widest text-[color:var(--color-muted)] ml-1">ft</span></p>
+                  </div>
+                  <div>
+                    <p class="eyebrow text-[0.6rem] mb-1">All time</p>
+                    <p class="stat-num text-2xl">{soloist.all_time_mi}<span class="mono text-[0.6rem] uppercase tracking-widest text-[color:var(--color-muted)] ml-1">mi</span></p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <p class="mono text-xs uppercase tracking-[0.2em] text-[color:var(--color-muted)] mb-2">
-                Road bike · 2025
-              </p>
-              <h3 class="display text-3xl md:text-4xl mb-4">Cervélo Soloist</h3>
-              <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm max-w-md mb-5">
-                <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Frame</dt>
-                <dd class="font-serif">Full carbon, truncated aero tubes</dd>
-                <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Groupset</dt>
-                <dd class="font-serif">SRAM Force eTap AXS</dd>
-                <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Signature</dt>
-                <dd class="font-serif italic">Dropped seat stays, integrated cockpit</dd>
-              </dl>
-              <p class="mono text-xs uppercase tracking-[0.2em] text-[color:var(--color-muted)]">
-                {strava.soloistMiles} mi &nbsp;·&nbsp; {strava.soloistRides} {strava.soloistRides === 1 ? "ride" : "rides"} this year
-              </p>
-            </div>
-          </div>
-        )}
+          ) : null;
+        })()}
 
-        <!-- Bay Wheels — always on, the SF commute staple -->
-        <div class="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center border-t border-[color:var(--color-rule)] pt-8 pb-2">
-          <div>
-            <BikeBayWheels />
-          </div>
-          <div>
-            <p class="mono text-xs uppercase tracking-[0.2em] text-[color:var(--color-muted)] mb-2">
-              City bike · Lyft
-            </p>
-            <h3 class="display text-3xl md:text-4xl mb-4">Bay Wheels Classic</h3>
-            <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm max-w-md mb-5">
-              <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Frame</dt>
-              <dd class="font-serif">Step-through aluminum, colorful wrap</dd>
-              <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Drivetrain</dt>
-              <dd class="font-serif">Internal 3-speed, belt drive</dd>
-              <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Role</dt>
-              <dd class="font-serif italic">Daily SF commute + errands</dd>
-            </dl>
-          </div>
-        </div>
+        {/* Bay Wheels — always shown */}
+        {(() => {
+          const bay = strava.bikes.find(b => /bay.?wheels|lyft/i.test(b.name));
+          return (
+            <div class="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center border-t border-[color:var(--color-rule)] pt-8 pb-2">
+              <div><BikeBayWheels /></div>
+              <div>
+                <p class="mono text-xs uppercase tracking-[0.2em] text-[color:var(--color-muted)] mb-2">City bike · Lyft</p>
+                <h3 class="display text-3xl md:text-4xl mb-4">Bay Wheels Classic</h3>
+                <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm max-w-md mb-6">
+                  <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Frame</dt>
+                  <dd class="font-serif">Step-through aluminum, colorful wrap</dd>
+                  <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Drivetrain</dt>
+                  <dd class="font-serif">Internal 3-speed, belt drive</dd>
+                  <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Role</dt>
+                  <dd class="font-serif italic">Daily SF commute + errands</dd>
+                </dl>
+                {bay && (
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 border-t border-[color:var(--color-rule)] pt-4">
+                    <div>
+                      <p class="eyebrow text-[0.6rem] mb-1">This year</p>
+                      <p class="stat-num text-2xl">{bay.ytd_mi}<span class="mono text-[0.6rem] uppercase tracking-widest text-[color:var(--color-muted)] ml-1">mi</span></p>
+                    </div>
+                    <div>
+                      <p class="eyebrow text-[0.6rem] mb-1">Rides</p>
+                      <p class="stat-num text-2xl">{bay.ytd_rides}</p>
+                    </div>
+                    <div>
+                      <p class="eyebrow text-[0.6rem] mb-1">Elev · YTD</p>
+                      <p class="stat-num text-2xl">{bay.ytd_elev_ft}<span class="mono text-[0.6rem] uppercase tracking-widest text-[color:var(--color-muted)] ml-1">ft</span></p>
+                    </div>
+                    <div>
+                      <p class="eyebrow text-[0.6rem] mb-1">All time</p>
+                      <p class="stat-num text-2xl">{bay.all_time_mi}<span class="mono text-[0.6rem] uppercase tracking-widest text-[color:var(--color-muted)] ml-1">mi</span></p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </section>
 
       <!-- ░░ RECENT ACTIVITIES ░░ -->

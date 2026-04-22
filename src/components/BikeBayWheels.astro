@@ -1,8 +1,8 @@
 ---
 /**
- * Line-art Bay Wheels (Lyft) classic city bike.
- * Distinct shape: deep step-through frame (no top tube), swept-back
- * upright bars, fat tires, front rack, integrated rear fender.
+ * Line-art Bay Wheels (Lyft) classic city bike. No inline wordmarks.
+ * Step-through frame, swept-back upright bars, fat tires,
+ * wrap-around rear fender, front rack hoop.
  */
 
 interface Props {
@@ -27,119 +27,112 @@ const { class: className = "" } = Astro.props;
         .ink        { stroke: var(--color-ink); stroke-linecap: round; fill: none; }
         .ink-fill   { fill:   var(--color-ink); }
         .spoke      { stroke: var(--color-ink); stroke-width: 0.6; opacity: 0.6; }
-        .rim        { stroke: var(--color-ink); stroke-width: 1.5; fill: none; }
-        .tire       { stroke: var(--color-ink); stroke-width: 4; fill: none; opacity: 0.9; }
-        .wordmark   { fill: #ffffff; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 5px; letter-spacing: 0.15em; font-weight: 600; }
+        .rim        { stroke: var(--color-ink); stroke-width: 1.4; fill: none; }
+        .tire       { stroke: var(--color-ink); stroke-width: 4.5; fill: none; }
       </style>
     </defs>
 
     <!-- ░░ REAR WHEEL ░░ -->
-    <g class="wheel" style="transform-origin: 255px 140px;">
-      <circle class="tire" cx="255" cy="140" r="30" />
-      <circle class="rim"  cx="255" cy="140" r="25" />
-      <!-- Spokes (more of them, thinner — city bike vibe) -->
-      <g>
-        <line class="spoke" x1="255" y1="115" x2="255" y2="165" />
-        <line class="spoke" x1="230" y1="140" x2="280" y2="140" />
-        <line class="spoke" x1="237" y1="122" x2="273" y2="158" />
-        <line class="spoke" x1="237" y1="158" x2="273" y2="122" />
-        <line class="spoke" x1="244" y1="117" x2="266" y2="163" />
-        <line class="spoke" x1="244" y1="163" x2="266" y2="117" />
-        <line class="spoke" x1="233" y1="130" x2="277" y2="150" />
-        <line class="spoke" x1="233" y1="150" x2="277" y2="130" />
-      </g>
-      <circle class="ink-fill" cx="255" cy="140" r="2.5" />
+    <g class="wheel" style="transform-origin: 252px 140px;">
+      <circle class="tire" cx="252" cy="140" r="30" />
+      <circle class="rim"  cx="252" cy="140" r="24" />
+      <line class="spoke" x1="252" y1="116" x2="252" y2="164" />
+      <line class="spoke" x1="228" y1="140" x2="276" y2="140" />
+      <line class="spoke" x1="235" y1="123" x2="269" y2="157" />
+      <line class="spoke" x1="235" y1="157" x2="269" y2="123" />
+      <line class="spoke" x1="242" y1="118" x2="262" y2="162" />
+      <line class="spoke" x1="242" y1="162" x2="262" y2="118" />
+      <line class="spoke" x1="230" y1="131" x2="274" y2="149" />
+      <line class="spoke" x1="230" y1="149" x2="274" y2="131" />
+      <circle class="ink-fill" cx="252" cy="140" r="2.5" />
     </g>
 
     <!-- ░░ FRONT WHEEL ░░ -->
     <g class="wheel" style="transform-origin: 62px 140px;">
       <circle class="tire" cx="62" cy="140" r="30" />
-      <circle class="rim"  cx="62" cy="140" r="25" />
-      <g>
-        <line class="spoke" x1="62"  y1="115" x2="62"  y2="165" />
-        <line class="spoke" x1="37"  y1="140" x2="87"  y2="140" />
-        <line class="spoke" x1="44"  y1="122" x2="80"  y2="158" />
-        <line class="spoke" x1="44"  y1="158" x2="80"  y2="122" />
-        <line class="spoke" x1="51"  y1="117" x2="73"  y2="163" />
-        <line class="spoke" x1="51"  y1="163" x2="73"  y2="117" />
-        <line class="spoke" x1="40"  y1="130" x2="84"  y2="150" />
-        <line class="spoke" x1="40"  y1="150" x2="84"  y2="130" />
-      </g>
+      <circle class="rim"  cx="62" cy="140" r="24" />
+      <line class="spoke" x1="62" y1="116" x2="62" y2="164" />
+      <line class="spoke" x1="38" y1="140" x2="86" y2="140" />
+      <line class="spoke" x1="45" y1="123" x2="79" y2="157" />
+      <line class="spoke" x1="45" y1="157" x2="79" y2="123" />
+      <line class="spoke" x1="52" y1="118" x2="72" y2="162" />
+      <line class="spoke" x1="52" y1="162" x2="72" y2="118" />
+      <line class="spoke" x1="40" y1="131" x2="84" y2="149" />
+      <line class="spoke" x1="40" y1="149" x2="84" y2="131" />
       <circle class="ink-fill" cx="62" cy="140" r="2.5" />
     </g>
 
-    <!-- ░░ FRAME (step-through) ░░ -->
-    <!-- Main curve: head tube → dips low → rises to seat cluster (this is
-         where the colorful wrap sits on the real bike) -->
-    <path class="navy" d="M 108 58 Q 130 95 175 115 Q 210 125 218 70"
-          stroke-width="11" />
+    <!-- ░░ HEAD TUBE / STEM (azure) ░░ -->
+    <!-- Head tube (slack angle, azure) -->
+    <line class="azure" x1="98" y1="92" x2="118" y2="48" stroke-width="7" />
+    <!-- Stem riser -->
+    <line class="azure" x1="118" y1="48" x2="132" y2="38" stroke-width="4" />
 
-    <!-- Lower tube: head tube → bottom bracket (subtle curve) -->
-    <path class="navy" d="M 108 62 Q 140 108 175 140" stroke-width="5" />
+    <!-- ░░ MAIN STEP-THROUGH TUBE (navy, fat) ░░
+         One big swooping tube: head tube → low belly → rise to seat cluster -->
+    <path class="navy"
+      d="M 110 72 Q 130 108 170 118 Q 200 123 210 72"
+      stroke-width="14" />
 
-    <!-- Seat tube -->
-    <line class="navy" x1="175" y1="140" x2="218" y2="70" stroke-width="5" />
+    <!-- Accent overlay on the main tube to hint at the colorful wrap -->
+    <path d="M 140 110 Q 165 120 190 118"
+      stroke="var(--accent-wrap)" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.85" />
 
-    <!-- Chain stay / rear triangle -->
-    <line class="navy" x1="175" y1="140" x2="255" y2="140" stroke-width="3.5" />
-    <path class="navy" d="M 218 70 Q 240 100 255 140" stroke-width="2.5" />
+    <!-- ░░ SEAT TUBE ░░ -->
+    <line class="navy" x1="170" y1="140" x2="210" y2="72" stroke-width="5.5" />
 
-    <!-- ░░ REAR FENDER (big wrap-around) ░░ -->
-    <path class="navy" d="M 225 140 Q 240 100 268 95 L 287 110 Q 282 125 280 140"
-          stroke-width="2.5" />
-    <!-- lyft mark on fender -->
-    <circle class="ink-fill" cx="280" cy="118" r="5" />
-    <text x="280" y="120" text-anchor="middle" class="wordmark">lyft</text>
+    <!-- ░░ DOWN-BRACE ░░ (from head tube down to BB) -->
+    <line class="navy" x1="108" y1="86" x2="170" y2="140" stroke-width="3" />
 
-    <!-- ░░ FRONT FENDER ░░ -->
-    <path class="navy" d="M 38 130 Q 55 105 85 110" stroke-width="2.5" />
+    <!-- ░░ CHAIN + SEAT STAYS ░░ -->
+    <line class="navy" x1="170" y1="140" x2="252" y2="140" stroke-width="3.5" />
+    <line class="navy" x1="210" y1="72"  x2="252" y2="140" stroke-width="2.8" />
 
     <!-- ░░ FORK (azure) ░░ -->
-    <path class="azure" d="M 108 62 Q 95 100 62 140" stroke-width="4" />
+    <path class="azure" d="M 108 88 Q 90 114 62 140" stroke-width="4.5" />
 
-    <!-- ░░ HEAD TUBE / STEM (azure) ░░ -->
-    <line class="azure" x1="108" y1="62" x2="115" y2="40" stroke-width="4.5" />
-    <!-- Riser stem -->
-    <line class="azure" x1="115" y1="40" x2="128" y2="32" stroke-width="3.5" />
-
-    <!-- ░░ SWEPT-BACK HANDLEBAR ░░ -->
-    <path class="ink" d="M 128 32 Q 150 30 162 44 Q 168 52 165 62"
-          stroke-width="3" />
-    <!-- Left grip hint (far side) -->
-    <line class="ink" x1="148" y1="45" x2="158" y2="36" stroke-width="2.2" />
+    <!-- ░░ SWEPT-BACK HANDLEBAR (black rubber/grip) ░░ -->
+    <path class="ink" d="M 132 38 Q 156 32 172 46 Q 180 55 175 68" stroke-width="3.2" />
+    <!-- Left grip (far side, visible past stem) -->
+    <line class="ink" x1="150" y1="42" x2="162" y2="32" stroke-width="2.4" />
     <!-- Right grip -->
-    <line class="ink" x1="163" y1="58" x2="170" y2="68" stroke-width="3" />
+    <line class="ink" x1="174" y1="62" x2="182" y2="72" stroke-width="3.2" />
+    <!-- Brake hood hint -->
+    <circle class="ink-fill" cx="175" cy="66" r="1.6" />
+
+    <!-- ░░ FRONT RACK (azure tubular hoop) ░░ -->
+    <path class="azure"
+      d="M 118 54 L 150 48 L 152 40 L 120 46 Z"
+      stroke-width="1.8" fill="none" />
+
+    <!-- ░░ REAR FENDER (big wrap-around, navy) ░░ -->
+    <path class="navy"
+      d="M 222 140 Q 235 108 262 100 L 282 110 Q 284 124 282 140"
+      stroke-width="3" />
+    <!-- Fender colorful tag -->
+    <rect x="272" y="112" width="10" height="8" rx="0" fill="var(--accent-wrap)" opacity="0.75" />
 
     <!-- ░░ SADDLE + SEAT POST ░░ -->
-    <line class="ink" x1="218" y1="70" x2="220" y2="52" stroke-width="3" />
+    <line class="ink" x1="210" y1="72" x2="214" y2="52" stroke-width="3" />
     <path class="ink-fill"
-          d="M 202 48 Q 220 42 238 50 L 234 55 Q 220 50 206 52 Z" />
+      d="M 196 46 Q 214 38 234 46 L 230 52 Q 214 46 200 50 Z" />
 
-    <!-- ░░ BOTTOM BRACKET / CRANK ░░ -->
-    <circle class="ink-fill" cx="175" cy="140" r="3.5" />
-    <circle cx="175" cy="140" r="10" stroke="var(--color-ink)" stroke-width="0.8" fill="none" opacity="0.5" />
-    <line class="ink" x1="175" y1="140" x2="190" y2="152" stroke-width="2.4" />
-    <line class="ink" x1="186" y1="148" x2="196" y2="156" stroke-width="2" />
-
-    <!-- ░░ FRONT BASKET RACK (tubular, empty) ░░ -->
-    <path class="azure" d="M 120 44 L 150 40 L 152 30 L 124 32 Z"
-          stroke-width="1.8" fill="none" />
+    <!-- ░░ BOTTOM BRACKET + CRANK ░░ -->
+    <circle cx="170" cy="140" r="11" stroke="var(--color-ink)" stroke-width="0.8" fill="none" opacity="0.5" />
+    <circle class="ink-fill" cx="170" cy="140" r="3.5" />
+    <line class="ink" x1="170" y1="140" x2="186" y2="152" stroke-width="2.4" />
+    <line class="ink" x1="182" y1="148" x2="192" y2="156" stroke-width="2" />
 
     <!-- ░░ KICKSTAND ░░ -->
-    <line class="ink" x1="178" y1="142" x2="172" y2="168" stroke-width="2" />
-
-    <!-- ░░ "bay wheels" wordmark on main tube ░░ -->
-    <text x="150" y="108" class="wordmark" transform="rotate(-8 150 108)">BAY WHEELS</text>
+    <line class="ink" x1="174" y1="142" x2="168" y2="170" stroke-width="2" />
   </svg>
-  <figcaption class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] mt-2">
-    Bay Wheels · Classic
-  </figcaption>
 </figure>
 
 <style>
   .bike-bay {
     --navy:  #1e3a5f;
     --azure: #007FFF;
+    --accent-wrap: #e65f3e;
   }
   .bike-bay .wheel {
     animation: bike-bay-spin 1.9s linear infinite;

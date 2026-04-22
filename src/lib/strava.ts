@@ -36,6 +36,15 @@ export interface YearStats {
   weights: { hours: string; count: number };
 }
 
+export interface BikeStats {
+  id: string;
+  name: string;
+  all_time_mi: string;   // from Strava athlete gear
+  ytd_mi: string;        // computed from YTD activity list
+  ytd_elev_ft: string;   // computed from YTD activity list
+  ytd_rides: number;
+}
+
 export type StravaSnapshot =
   | {
       status: "ok";
@@ -44,9 +53,7 @@ export type StravaSnapshot =
       ytd: YearStats;
       latest: Activity | null;
       recent: Activity[];
-      hasSoloist: boolean;          // Cervélo Soloist registered in gear
-      soloistRides: number;          // count of rides on it YTD
-      soloistMiles: string;          // miles on it YTD
+      bikes: BikeStats[];  // all registered bikes with stats
     }
   | { status: "error"; reason: string };
 
@@ -337,25 +344,32 @@ export async function getStravaData(): Promise<StravaSnapshot> {
     const latest = activities[0] ?? null;
     const recent = activities.slice(0, 10);
 
-    // ── Soloist presence + YTD usage ──────────────────────────────────────
-    let soloistGearId: string | null = null;
-    for (const [id, name] of gearMap.entries()) {
-      if (/soloist/i.test(name)) {
-        soloistGearId = id;
-        break;
-      }
-    }
-    const soloistActivities = soloistGearId
-      ? ytdActivities.filter(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (a) => (a as any).gear_id === soloistGearId
-        )
-      : [];
-    const soloistMeters = soloistActivities.reduce(
+    // ── Per-bike stats ─────────────────────────────────────────────────────
+    const bikes: BikeStats[] = Array.isArray(athlete?.bikes)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (sum, a) => sum + ((a as any).distance ?? 0),
-      0
-    );
+      ? (athlete.bikes as any[]).map((b) => {
+          const bikeActivities = ytdActivities.filter(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (a) => (a as any).gear_id === b.id
+          );
+          const ytdMeters = bikeActivities.reduce(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (sum, a) => sum + ((a as any).distance ?? 0), 0
+          );
+          const ytdElevM = bikeActivities.reduce(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (sum, a) => sum + ((a as any).total_elevation_gain ?? 0), 0
+          );
+          return {
+            id: b.id,
+            name: b.name ?? "Unknown bike",
+            all_time_mi: fmtMi(b.distance ?? 0),
+            ytd_mi: fmtMi(ytdMeters),
+            ytd_elev_ft: fmtElevationFt(ytdElevM),
+            ytd_rides: bikeActivities.length,
+          };
+        })
+      : [];
 
     return {
       status: "ok",
@@ -364,9 +378,7 @@ export async function getStravaData(): Promise<StravaSnapshot> {
       ytd,
       latest,
       recent,
-      hasSoloist: soloistGearId !== null,
-      soloistRides: soloistActivities.length,
-      soloistMiles: fmtMi(soloistMeters),
+      bikes,
     };
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);

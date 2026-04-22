@@ -1,10 +1,10 @@
 ---
 /**
- * Line-art Cervélo Soloist (2025, Ocean Blue). Signature features:
- *  - Dropped seat stays meeting the seat tube well below the top tube
+ * Line-art Cervélo Soloist (2025, Azure). No inline wordmarks —
+ * the surrounding typography labels it. Signature features:
+ *  - Dropped seat stays meeting the seat tube below the top tube
  *  - Integrated one-piece cockpit, no spacer stack
  *  - Truncated aero tube profiles
- *  - D-shaped aero seatpost
  *  - Deep-section aero wheels
  */
 
@@ -13,7 +13,7 @@ interface Props {
 }
 const { class: className = "" } = Astro.props;
 ---
-<figure class={`bike-soloist inline-block ${className}`} aria-label="Cervélo Soloist 2025">
+<figure class={`bike-soloist inline-block ${className}`} aria-label="Cervélo Soloist">
   <svg
     viewBox="0 0 320 170"
     width="320"
@@ -24,13 +24,11 @@ const { class: className = "" } = Astro.props;
     <defs>
       <style>
         .frame      { stroke: var(--bike-blue); stroke-linejoin: round; stroke-linecap: round; fill: none; }
-        .frame-fill { fill:   var(--bike-blue); }
         .ink        { stroke: var(--color-ink); stroke-linecap: round; fill: none; }
         .ink-fill   { fill:   var(--color-ink); }
         .spoke      { stroke: var(--color-ink); stroke-width: 0.5; opacity: 0.55; }
         .rim        { stroke: var(--color-ink); stroke-width: 1.3; fill: none; }
         .deep       { stroke: var(--color-ink); stroke-width: 5; fill: none; opacity: 0.12; }
-        .wordmark   { fill: #ffffff; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 5.5px; letter-spacing: 0.14em; font-weight: 500; }
       </style>
     </defs>
 
@@ -63,58 +61,48 @@ const { class: className = "" } = Astro.props;
     </g>
 
     <!-- ░░ FRAME ░░ -->
-    <!-- Down tube (fat aero) -->
-    <line class="frame" x1="158" y1="128" x2="95" y2="62" stroke-width="6" />
-    <!-- Top tube (aero, sloped) -->
+    <line class="frame" x1="158" y1="128" x2="95"  y2="62" stroke-width="6" />
     <line class="frame" x1="95"  y1="62"  x2="188" y2="58" stroke-width="4.5" />
-    <!-- Seat tube -->
     <line class="frame" x1="158" y1="128" x2="188" y2="58" stroke-width="5" />
-    <!-- Head tube (short, stiff) -->
     <line class="frame" x1="95"  y1="62"  x2="103" y2="46" stroke-width="5" />
 
-    <!-- ░░ DROPPED SEAT STAYS ░░ (signature Cervélo detail) -->
+    <!-- Dropped seat stays (Cervélo signature) -->
     <line class="frame" x1="258" y1="128" x2="180" y2="76" stroke-width="2.8" />
     <!-- Chain stays -->
     <line class="frame" x1="158" y1="128" x2="258" y2="128" stroke-width="3" />
-
-    <!-- Seat post (D-shape aero, integrated) -->
+    <!-- Aero seatpost -->
     <line class="frame" x1="188" y1="58"  x2="193" y2="36" stroke-width="3.4" />
+
     <!-- Saddle -->
     <path class="ink-fill" d="M 178 36 Q 193 30 208 34 L 206 38 Q 193 36 180 39 Z" />
 
-    <!-- ░░ FORK ░░ (aero blade, curved) -->
+    <!-- Aero fork -->
     <path class="frame" d="M 100 48 Q 92 90 62 128" stroke-width="3" />
 
-    <!-- ░░ INTEGRATED COCKPIT ░░ -->
+    <!-- Integrated cockpit -->
     <line class="ink" x1="103" y1="46" x2="88"  y2="38" stroke-width="2.6" />
     <line class="ink" x1="76"  y1="38" x2="100" y2="38" stroke-width="2.6" />
     <path class="ink" d="M 76 38 Q 62 40 60 52 Q 60 58 66 60" stroke-width="2.2" />
 
-    <!-- Bottom bracket -->
+    <!-- BB + chainring + crank -->
     <circle class="ink-fill" cx="158" cy="128" r="3.4" />
-
-    <!-- Chainring -->
     <circle cx="158" cy="128" r="10" stroke="var(--color-ink)" stroke-width="0.8" fill="none" opacity="0.55" />
-    <!-- Crank + pedal -->
     <line class="ink" x1="158" y1="128" x2="178" y2="141" stroke-width="2.4" />
     <line class="ink" x1="174" y1="137" x2="184" y2="145" stroke-width="2" />
 
-    <!-- Rear derailleur hint (SRAM cage) -->
+    <!-- Rear derailleur hint -->
     <path class="ink" d="M 258 128 L 248 140 L 252 148" stroke-width="1.2" />
     <circle class="ink-fill" cx="248" cy="140" r="1.5" />
     <circle class="ink-fill" cx="252" cy="148" r="1.5" />
 
-    <!-- Down-tube wordmark (white on blue) -->
-    <text x="108" y="97" class="wordmark" transform="rotate(-46 108 97)">CERVÉLO</text>
+    <!-- Head-tube badge dot (tiny detail) -->
+    <circle class="ink-fill" cx="99" cy="52" r="1.4" />
   </svg>
-  <figcaption class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] mt-2">
-    Cervélo Soloist · 2025
-  </figcaption>
 </figure>
 
 <style>
   .bike-soloist {
-    --bike-blue: #007FFF; /* Azure */
+    --bike-blue: #007FFF;
   }
   .bike-soloist .wheel {
     animation: bike-spin 1.4s linear infinite;
