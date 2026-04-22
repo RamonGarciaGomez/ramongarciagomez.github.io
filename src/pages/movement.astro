@@ -3,6 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { getStravaData } from "../lib/strava";
 import RouteSvg from "../components/RouteSvg.astro";
 import BikeSoloist from "../components/BikeSoloist.astro";
+import BikeBayWheels from "../components/BikeBayWheels.astro";
 
 const strava = await getStravaData();
 
@@ -144,11 +145,12 @@ function relativeTime(iso: string): string {
       )}
 
       <!-- ░░ GEAR ░░ -->
-      {strava.hasSoloist && (
-        <section>
-          <p class="eyebrow mb-6">Gear</p>
-          <div class="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center border-t border-[color:var(--color-rule)] pt-8">
-            <div class="text-[color:var(--color-ink)]">
+      <section>
+        <p class="eyebrow mb-8">Gear</p>
+
+        {strava.hasSoloist && (
+          <div class="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center border-t border-[color:var(--color-rule)] pt-8 pb-10">
+            <div>
               <BikeSoloist />
             </div>
             <div>
@@ -169,8 +171,29 @@ function relativeTime(iso: string): string {
               </p>
             </div>
           </div>
-        </section>
-      )}
+        )}
+
+        <!-- Bay Wheels — always on, the SF commute staple -->
+        <div class="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center border-t border-[color:var(--color-rule)] pt-8 pb-2">
+          <div>
+            <BikeBayWheels />
+          </div>
+          <div>
+            <p class="mono text-xs uppercase tracking-[0.2em] text-[color:var(--color-muted)] mb-2">
+              City bike · Lyft
+            </p>
+            <h3 class="display text-3xl md:text-4xl mb-4">Bay Wheels Classic</h3>
+            <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm max-w-md mb-5">
+              <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Frame</dt>
+              <dd class="font-serif">Step-through aluminum, colorful wrap</dd>
+              <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Drivetrain</dt>
+              <dd class="font-serif">Internal 3-speed, belt drive</dd>
+              <dt class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] pt-1">Role</dt>
+              <dd class="font-serif italic">Daily SF commute + errands</dd>
+            </dl>
+          </div>
+        </div>
+      </section>
 
       <!-- ░░ RECENT ACTIVITIES ░░ -->
       {strava.recent.length > 0 && (

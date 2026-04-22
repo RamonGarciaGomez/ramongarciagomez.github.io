@@ -1,0 +1,153 @@
+---
+/**
+ * Line-art Bay Wheels (Lyft) classic city bike.
+ * Distinct shape: deep step-through frame (no top tube), swept-back
+ * upright bars, fat tires, front rack, integrated rear fender.
+ */
+
+interface Props {
+  class?: string;
+}
+const { class: className = "" } = Astro.props;
+---
+<figure class={`bike-bay inline-block ${className}`} aria-label="Bay Wheels classic">
+  <svg
+    viewBox="0 0 320 180"
+    width="320"
+    height="180"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <defs>
+      <style>
+        .navy       { stroke: var(--navy); stroke-linejoin: round; stroke-linecap: round; fill: none; }
+        .navy-fill  { fill:   var(--navy); }
+        .azure      { stroke: var(--azure); stroke-linejoin: round; stroke-linecap: round; fill: none; }
+        .azure-fill { fill:   var(--azure); }
+        .ink        { stroke: var(--color-ink); stroke-linecap: round; fill: none; }
+        .ink-fill   { fill:   var(--color-ink); }
+        .spoke      { stroke: var(--color-ink); stroke-width: 0.6; opacity: 0.6; }
+        .rim        { stroke: var(--color-ink); stroke-width: 1.5; fill: none; }
+        .tire       { stroke: var(--color-ink); stroke-width: 4; fill: none; opacity: 0.9; }
+        .wordmark   { fill: #ffffff; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 5px; letter-spacing: 0.15em; font-weight: 600; }
+      </style>
+    </defs>
+
+    <!-- ░░ REAR WHEEL ░░ -->
+    <g class="wheel" style="transform-origin: 255px 140px;">
+      <circle class="tire" cx="255" cy="140" r="30" />
+      <circle class="rim"  cx="255" cy="140" r="25" />
+      <!-- Spokes (more of them, thinner — city bike vibe) -->
+      <g>
+        <line class="spoke" x1="255" y1="115" x2="255" y2="165" />
+        <line class="spoke" x1="230" y1="140" x2="280" y2="140" />
+        <line class="spoke" x1="237" y1="122" x2="273" y2="158" />
+        <line class="spoke" x1="237" y1="158" x2="273" y2="122" />
+        <line class="spoke" x1="244" y1="117" x2="266" y2="163" />
+        <line class="spoke" x1="244" y1="163" x2="266" y2="117" />
+        <line class="spoke" x1="233" y1="130" x2="277" y2="150" />
+        <line class="spoke" x1="233" y1="150" x2="277" y2="130" />
+      </g>
+      <circle class="ink-fill" cx="255" cy="140" r="2.5" />
+    </g>
+
+    <!-- ░░ FRONT WHEEL ░░ -->
+    <g class="wheel" style="transform-origin: 62px 140px;">
+      <circle class="tire" cx="62" cy="140" r="30" />
+      <circle class="rim"  cx="62" cy="140" r="25" />
+      <g>
+        <line class="spoke" x1="62"  y1="115" x2="62"  y2="165" />
+        <line class="spoke" x1="37"  y1="140" x2="87"  y2="140" />
+        <line class="spoke" x1="44"  y1="122" x2="80"  y2="158" />
+        <line class="spoke" x1="44"  y1="158" x2="80"  y2="122" />
+        <line class="spoke" x1="51"  y1="117" x2="73"  y2="163" />
+        <line class="spoke" x1="51"  y1="163" x2="73"  y2="117" />
+        <line class="spoke" x1="40"  y1="130" x2="84"  y2="150" />
+        <line class="spoke" x1="40"  y1="150" x2="84"  y2="130" />
+      </g>
+      <circle class="ink-fill" cx="62" cy="140" r="2.5" />
+    </g>
+
+    <!-- ░░ FRAME (step-through) ░░ -->
+    <!-- Main curve: head tube → dips low → rises to seat cluster (this is
+         where the colorful wrap sits on the real bike) -->
+    <path class="navy" d="M 108 58 Q 130 95 175 115 Q 210 125 218 70"
+          stroke-width="11" />
+
+    <!-- Lower tube: head tube → bottom bracket (subtle curve) -->
+    <path class="navy" d="M 108 62 Q 140 108 175 140" stroke-width="5" />
+
+    <!-- Seat tube -->
+    <line class="navy" x1="175" y1="140" x2="218" y2="70" stroke-width="5" />
+
+    <!-- Chain stay / rear triangle -->
+    <line class="navy" x1="175" y1="140" x2="255" y2="140" stroke-width="3.5" />
+    <path class="navy" d="M 218 70 Q 240 100 255 140" stroke-width="2.5" />
+
+    <!-- ░░ REAR FENDER (big wrap-around) ░░ -->
+    <path class="navy" d="M 225 140 Q 240 100 268 95 L 287 110 Q 282 125 280 140"
+          stroke-width="2.5" />
+    <!-- lyft mark on fender -->
+    <circle class="ink-fill" cx="280" cy="118" r="5" />
+    <text x="280" y="120" text-anchor="middle" class="wordmark">lyft</text>
+
+    <!-- ░░ FRONT FENDER ░░ -->
+    <path class="navy" d="M 38 130 Q 55 105 85 110" stroke-width="2.5" />
+
+    <!-- ░░ FORK (azure) ░░ -->
+    <path class="azure" d="M 108 62 Q 95 100 62 140" stroke-width="4" />
+
+    <!-- ░░ HEAD TUBE / STEM (azure) ░░ -->
+    <line class="azure" x1="108" y1="62" x2="115" y2="40" stroke-width="4.5" />
+    <!-- Riser stem -->
+    <line class="azure" x1="115" y1="40" x2="128" y2="32" stroke-width="3.5" />
+
+    <!-- ░░ SWEPT-BACK HANDLEBAR ░░ -->
+    <path class="ink" d="M 128 32 Q 150 30 162 44 Q 168 52 165 62"
+          stroke-width="3" />
+    <!-- Left grip hint (far side) -->
+    <line class="ink" x1="148" y1="45" x2="158" y2="36" stroke-width="2.2" />
+    <!-- Right grip -->
+    <line class="ink" x1="163" y1="58" x2="170" y2="68" stroke-width="3" />
+
+    <!-- ░░ SADDLE + SEAT POST ░░ -->
+    <line class="ink" x1="218" y1="70" x2="220" y2="52" stroke-width="3" />
+    <path class="ink-fill"
+          d="M 202 48 Q 220 42 238 50 L 234 55 Q 220 50 206 52 Z" />
+
+    <!-- ░░ BOTTOM BRACKET / CRANK ░░ -->
+    <circle class="ink-fill" cx="175" cy="140" r="3.5" />
+    <circle cx="175" cy="140" r="10" stroke="var(--color-ink)" stroke-width="0.8" fill="none" opacity="0.5" />
+    <line class="ink" x1="175" y1="140" x2="190" y2="152" stroke-width="2.4" />
+    <line class="ink" x1="186" y1="148" x2="196" y2="156" stroke-width="2" />
+
+    <!-- ░░ FRONT BASKET RACK (tubular, empty) ░░ -->
+    <path class="azure" d="M 120 44 L 150 40 L 152 30 L 124 32 Z"
+          stroke-width="1.8" fill="none" />
+
+    <!-- ░░ KICKSTAND ░░ -->
+    <line class="ink" x1="178" y1="142" x2="172" y2="168" stroke-width="2" />
+
+    <!-- ░░ "bay wheels" wordmark on main tube ░░ -->
+    <text x="150" y="108" class="wordmark" transform="rotate(-8 150 108)">BAY WHEELS</text>
+  </svg>
+  <figcaption class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] mt-2">
+    Bay Wheels · Classic
+  </figcaption>
+</figure>
+
+<style>
+  .bike-bay {
+    --navy:  #1e3a5f;
+    --azure: #007FFF;
+  }
+  .bike-bay .wheel {
+    animation: bike-bay-spin 1.9s linear infinite;
+  }
+  @keyframes bike-bay-spin {
+    to { transform: rotate(360deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bike-bay .wheel { animation: none; }
+  }
+</style>
