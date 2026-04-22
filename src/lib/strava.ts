@@ -1,7 +1,7 @@
 /**
  * Strava client for ramon-site.
  * Called at build time — all errors are swallowed so a Strava outage
- * never breaks the build.
+ * never breaks the build. Distances displayed in miles.
  */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -10,10 +10,10 @@ export interface Activity {
   id: number;
   name: string;
   sport_type: string;
-  distance_km: string;       // "12.3"
+  distance_mi: string;       // "7.6"
   moving_time_fmt: string;   // "1h 02m"
-  pace_fmt: string;          // "5:03 /km"  (blank for non-pace sports)
-  elevation_m: string;       // "142"
+  pace_fmt: string;          // "8:08 /mi"  (blank for non-pace sports)
+  elevation_ft: string;      // "465"
   start_date_local: string;  // ISO string from Strava
   date_fmt: string;          // "Apr 18"
   strava_url: string;        // "https://www.strava.com/activities/123"
@@ -21,16 +21,15 @@ export interface Activity {
 }
 
 export interface WeeklyStats {
-  km: string;         // "42.1"
+  mi: string;           // "26.3"
   count: number;
   duration_fmt: string; // "3h 47m"
 }
 
 export interface YearStats {
-  run: { km: string; count: number };
-  ride: { km: string; count: number };
-  swim: { km: string; count: number };
-  other: { km: string; count: number };
+  run: { mi: string; count: number };
+  ride: { mi: string; count: number };
+  swim: { mi: string; count: number };
 }
 
 export type StravaSnapshot =
@@ -95,8 +94,10 @@ async function stravaGet(path: string, token: string): Promise<unknown> {
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
 
-function fmtKm(meters: number): string {
-  return (meters / 1000).toFixed(1);
+const METERS_PER_MILE = 1609.344;
+
+function fmtMi(meters: number): string {
+  return (meters / METERS_PER_MILE).toFixed(1);
 }
 
 function fmtDuration(seconds: number): string {
@@ -108,23 +109,26 @@ function fmtDuration(seconds: number): string {
 function fmtPace(meters: number, seconds: number, sportType: string): string {
   const paceSports = ["Run", "TrailRun", "Walk", "Hike", "VirtualRun"];
   if (!paceSports.includes(sportType) || meters === 0) return "";
-  const secPerKm = seconds / (meters / 1000);
-  const pm = Math.floor(secPerKm / 60);
-  const ps = Math.round(secPerKm % 60);
-  return `${pm}:${String(ps).padStart(2, "0")} /km`;
+  const secPerMile = seconds / (meters / METERS_PER_MILE);
+  const pm = Math.floor(secPerMile / 60);
+  const ps = Math.round(secPerMile % 60);
+  return `${pm}:${String(ps).padStart(2, "0")} /mi`;
 }
 
 function fmtDate(isoLocal: string): string {
-  // isoLocal is "2025-04-18T07:30:00Z" or similar
   const d = new Date(isoLocal);
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function fmtElevationFt(meters: number): string {
+  return String(Math.round(meters * 3.28084));
 }
 
 // ─── ISO week helpers (Monday–Sunday, America/Los_Angeles) ───────────────────
 
 function weekBoundsUnix(): { start: number; end: number } {
-  // Get "now" in LA time
   const now = new Date();
+  // Get today's date in LA time
   const laStr = now.toLocaleDateString("en-US", {
     timeZone: "America/Los_Angeles",
     year: "numeric",
@@ -133,33 +137,26 @@ function weekBoundsUnix(): { start: number; end: number } {
   });
   // laStr is "MM/DD/YYYY"
   const [mm, dd, yyyy] = laStr.split("/").map(Number);
-  const localDate = new Date(yyyy!, mm! - 1, dd!);
-  const dow = localDate.getDay(); // 0=Sun … 6=Sat
-  // Monday = start of week
+  const dow = new Date(yyyy!, mm! - 1, dd!).getDay(); // 0=Sun
   const daysFromMon = (dow + 6) % 7;
-  const monday = new Date(localDate);
-  monday.setDate(localDate.getDate() - daysFromMon);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
 
-  // Convert to UTC unix timestamps
-  // monday at 00:00 LA time
-  const monLA = new Date(
-    `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}T00:00:00`
+  // Monday midnight LA time → unix
+  const monMidnightLA = new Date(
+    Date.UTC(yyyy!, mm! - 1, dd! - daysFromMon)
   );
-  const offset = getOffsetMs("America/Los_Angeles", monLA);
-  return {
-    start: Math.floor((monLA.getTime() + offset) / 1000),
-    end: Math.floor((sunday.getTime() + offset) / 1000),
-  };
+  // Apply LA offset so we get midnight in LA, not UTC
+  const offsetMs = getOffsetMs("America/Los_Angeles", monMidnightLA);
+  const weekStart = Math.floor((monMidnightLA.getTime() - offsetMs) / 1000);
+  // Sunday 23:59:59 LA time
+  const weekEnd = weekStart + 7 * 24 * 3600 - 1;
+
+  return { start: weekStart, end: weekEnd };
 }
 
 function getOffsetMs(tz: string, date: Date): number {
-  // Returns the UTC offset in ms for the given tz at the given date
   const utcStr = date.toLocaleString("en-US", { timeZone: "UTC" });
   const tzStr = date.toLocaleString("en-US", { timeZone: tz });
-  return new Date(utcStr).getTime() - new Date(tzStr).getTime();
+  return new Date(tzStr).getTime() - new Date(utcStr).getTime();
 }
 
 // ─── Normalize raw Strava activity ───────────────────────────────────────────
@@ -170,10 +167,10 @@ function normalize(raw: any, catalogIndex: number): Activity {
     id: raw.id,
     name: raw.name,
     sport_type: raw.sport_type ?? raw.type ?? "Workout",
-    distance_km: fmtKm(raw.distance ?? 0),
+    distance_mi: fmtMi(raw.distance ?? 0),
     moving_time_fmt: fmtDuration(raw.moving_time ?? 0),
     pace_fmt: fmtPace(raw.distance ?? 0, raw.moving_time ?? 0, raw.sport_type ?? ""),
-    elevation_m: String(Math.round(raw.total_elevation_gain ?? 0)),
+    elevation_ft: fmtElevationFt(raw.total_elevation_gain ?? 0),
     start_date_local: raw.start_date_local ?? raw.start_date ?? "",
     date_fmt: fmtDate(raw.start_date_local ?? raw.start_date ?? ""),
     strava_url: `https://www.strava.com/activities/${raw.id}`,
@@ -188,11 +185,11 @@ export async function getStravaData(): Promise<StravaSnapshot> {
     const token = await getAccessToken();
     const athleteId = import.meta.env.STRAVA_ATHLETE_ID;
 
-    // Fetch last 60 days of activities (covers this week + recent list)
+    // Fetch last 60 days of activities, explicitly sorted newest first
     const sixtyDaysAgo = Math.floor(Date.now() / 1000) - 60 * 24 * 3600;
     const [rawActivities, rawStats] = await Promise.all([
       stravaGet(
-        `/athlete/activities?after=${sixtyDaysAgo}&per_page=60`,
+        `/athlete/activities?after=${sixtyDaysAgo}&per_page=60&sort=start_date&sort_order=desc`,
         token
       ) as Promise<unknown[]>,
       athleteId
@@ -200,31 +197,34 @@ export async function getStravaData(): Promise<StravaSnapshot> {
         : Promise.resolve(null),
     ]);
 
-    const activities = (rawActivities as unknown[]).map((a, i) =>
+    // Sort newest first (defensive — Strava usually does this already)
+    const sorted = [...(rawActivities as unknown[])].sort((a, b) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return new Date((b as any).start_date).getTime() - new Date((a as any).start_date).getTime();
+    });
+
+    const activities = sorted.map((a, i) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       normalize(a as any, i)
     );
 
     // ── This week ──────────────────────────────────────────────────────────
     const { start: weekStart, end: weekEnd } = weekBoundsUnix();
-    const weekActivities = (rawActivities as unknown[]).filter((a) => {
+    const weekActivities = sorted.filter((a) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const r = a as any;
-      const t = Math.floor(new Date(r.start_date).getTime() / 1000);
+      const t = Math.floor(new Date((a as any).start_date).getTime() / 1000);
       return t >= weekStart && t <= weekEnd;
     });
     const weekTotalM = weekActivities.reduce(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (s, a) => s + ((a as any).distance ?? 0),
-      0
+      (s, a) => s + ((a as any).distance ?? 0), 0
     );
     const weekTotalS = weekActivities.reduce(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (s, a) => s + ((a as any).moving_time ?? 0),
-      0
+      (s, a) => s + ((a as any).moving_time ?? 0), 0
     );
     const thisWeek: WeeklyStats = {
-      km: fmtKm(weekTotalM),
+      mi: fmtMi(weekTotalM),
       count: weekActivities.length,
       duration_fmt: fmtDuration(weekTotalS),
     };
@@ -235,24 +235,22 @@ export async function getStravaData(): Promise<StravaSnapshot> {
     const ytd: YearStats = s
       ? {
           run: {
-            km: fmtKm(s.ytd_run_totals?.distance ?? 0),
+            mi: fmtMi(s.ytd_run_totals?.distance ?? 0),
             count: s.ytd_run_totals?.count ?? 0,
           },
           ride: {
-            km: fmtKm(s.ytd_ride_totals?.distance ?? 0),
+            mi: fmtMi(s.ytd_ride_totals?.distance ?? 0),
             count: s.ytd_ride_totals?.count ?? 0,
           },
           swim: {
-            km: fmtKm(s.ytd_swim_totals?.distance ?? 0),
+            mi: fmtMi(s.ytd_swim_totals?.distance ?? 0),
             count: s.ytd_swim_totals?.count ?? 0,
           },
-          other: { km: "0.0", count: 0 },
         }
       : {
-          run: { km: "0.0", count: 0 },
-          ride: { km: "0.0", count: 0 },
-          swim: { km: "0.0", count: 0 },
-          other: { km: "0.0", count: 0 },
+          run: { mi: "0.0", count: 0 },
+          ride: { mi: "0.0", count: 0 },
+          swim: { mi: "0.0", count: 0 },
         };
 
     const latest = activities[0] ?? null;
@@ -267,8 +265,7 @@ export async function getStravaData(): Promise<StravaSnapshot> {
       recent,
     };
   } catch (err) {
-    const reason =
-      err instanceof Error ? err.message : String(err);
+    const reason = err instanceof Error ? err.message : String(err);
     console.warn("[strava] data fetch failed:", reason);
     return { status: "error", reason };
   }

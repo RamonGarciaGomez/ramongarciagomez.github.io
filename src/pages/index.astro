@@ -176,7 +176,7 @@ const establishedMonth = oldest.toLocaleDateString("en-US", {
         <p class="eyebrow mb-2">Moving</p>
         {strava.status === "ok" ? (
           <div>
-            <p class="font-serif text-base">{strava.thisWeek.km} km this week</p>
+            <p class="font-serif text-base">{strava.thisWeek.mi} mi this week</p>
             {strava.latest && (
               <p class="mono text-xs text-[color:var(--color-muted)] mt-1 leading-relaxed">
                 {strava.thisWeek.count} {strava.thisWeek.count === 1 ? "activity" : "activities"} · Last: {strava.latest.name}

@@ -47,8 +47,8 @@ function relativeTime(iso: string): string {
       <section>
         <p class="eyebrow mb-6">This week</p>
         <div class="flex items-baseline gap-3 mb-3">
-          <span class="display text-7xl md:text-9xl">{strava.thisWeek.km}</span>
-          <span class="font-serif italic text-2xl md:text-3xl text-[color:var(--color-muted)]">km</span>
+          <span class="display text-7xl md:text-9xl">{strava.thisWeek.mi}</span>
+          <span class="font-serif italic text-2xl md:text-3xl text-[color:var(--color-muted)]">mi</span>
         </div>
         <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
           {strava.thisWeek.count} {strava.thisWeek.count === 1 ? "activity" : "activities"}
@@ -61,17 +61,17 @@ function relativeTime(iso: string): string {
       <!-- ░░ YEAR TO DATE ░░ -->
       <section>
         <p class="eyebrow mb-6">Year to date</p>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
           {[
-            { label: "Running", km: strava.ytd.run.km, count: strava.ytd.run.count, unit: "runs" },
-            { label: "Cycling", km: strava.ytd.ride.km, count: strava.ytd.ride.count, unit: "rides" },
-            { label: "Swimming", km: strava.ytd.swim.km, count: strava.ytd.swim.count, unit: "swims" },
-          ].map(({ label, km, count, unit }) => (
+            { label: "Running", mi: strava.ytd.run.mi, count: strava.ytd.run.count, unit: "runs" },
+            { label: "Cycling", mi: strava.ytd.ride.mi, count: strava.ytd.ride.count, unit: "rides" },
+            { label: "Swimming", mi: strava.ytd.swim.mi, count: strava.ytd.swim.count, unit: "swims" },
+          ].map(({ label, mi, count, unit }) => (
             <div>
               <p class="eyebrow mb-2 text-[0.65rem]">{label}</p>
-              <p class="display text-4xl md:text-5xl">{km}</p>
+              <p class="display text-4xl md:text-5xl">{mi}</p>
               <p class="mono text-xs text-[color:var(--color-muted)] mt-1">
-                km · {count} {unit}
+                mi · {count} {unit}
               </p>
             </div>
           ))}
@@ -93,7 +93,7 @@ function relativeTime(iso: string): string {
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-[color:var(--color-rule)] pt-6">
             <div>
               <p class="eyebrow mb-1 text-[0.65rem]">Distance</p>
-              <p class="font-serif text-2xl">{strava.latest.distance_km} <span class="text-base text-[color:var(--color-muted)]">km</span></p>
+              <p class="font-serif text-2xl">{strava.latest.distance_mi} <span class="text-base text-[color:var(--color-muted)]">mi</span></p>
             </div>
             {strava.latest.pace_fmt && (
               <div>
@@ -107,7 +107,7 @@ function relativeTime(iso: string): string {
             </div>
             <div>
               <p class="eyebrow mb-1 text-[0.65rem]">Elevation</p>
-              <p class="font-serif text-2xl">{strava.latest.elevation_m} <span class="text-base text-[color:var(--color-muted)]">m</span></p>
+              <p class="font-serif text-2xl">{strava.latest.elevation_ft} <span class="text-base text-[color:var(--color-muted)]">ft</span></p>
             </div>
           </div>
 
@@ -143,7 +143,7 @@ function relativeTime(iso: string): string {
                       {activity.name}
                     </h3>
                     <p class="mono text-xs text-[color:var(--color-muted)] mt-0.5">
-                      {activity.sport_type} · {activity.distance_km} km
+                      {activity.sport_type} · {activity.distance_mi} mi
                       {activity.pace_fmt && <span> · {activity.pace_fmt}</span>}
                     </p>
                   </div>
