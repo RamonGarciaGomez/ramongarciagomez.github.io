@@ -44,6 +44,9 @@ export type StravaSnapshot =
       ytd: YearStats;
       latest: Activity | null;
       recent: Activity[];
+      hasSoloist: boolean;          // Cervélo Soloist registered in gear
+      soloistRides: number;          // count of rides on it YTD
+      soloistMiles: string;          // miles on it YTD
     }
   | { status: "error"; reason: string };
 
@@ -118,7 +121,17 @@ async function stravaGet(path: string, token: string): Promise<unknown> {
 const METERS_PER_MILE = 1609.344;
 
 function fmtMi(meters: number): string {
-  return (meters / METERS_PER_MILE).toFixed(1);
+  return (meters / METERS_PER_MILE).toLocaleString("en-US", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+}
+
+function fmtHours(seconds: number): string {
+  return (seconds / 3600).toLocaleString("en-US", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
 }
 
 function fmtDuration(seconds: number): string {
@@ -142,7 +155,7 @@ function fmtDate(isoLocal: string): string {
 }
 
 function fmtElevationFt(meters: number): string {
-  return String(Math.round(meters * 3.28084));
+  return Math.round(meters * 3.28084).toLocaleString("en-US");
 }
 
 // ─── Week boundaries (Mon–Sun in America/Los_Angeles) ─────────────────────────
@@ -316,13 +329,33 @@ export async function getStravaData(): Promise<StravaSnapshot> {
           }
         : { mi: "0.0", count: 0 },
       weights: {
-        hours: (weightSeconds / 3600).toFixed(1),
+        hours: fmtHours(weightSeconds),
         count: weightActivities.length,
       },
     };
 
     const latest = activities[0] ?? null;
     const recent = activities.slice(0, 10);
+
+    // ── Soloist presence + YTD usage ──────────────────────────────────────
+    let soloistGearId: string | null = null;
+    for (const [id, name] of gearMap.entries()) {
+      if (/soloist/i.test(name)) {
+        soloistGearId = id;
+        break;
+      }
+    }
+    const soloistActivities = soloistGearId
+      ? ytdActivities.filter(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (a) => (a as any).gear_id === soloistGearId
+        )
+      : [];
+    const soloistMeters = soloistActivities.reduce(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (sum, a) => sum + ((a as any).distance ?? 0),
+      0
+    );
 
     return {
       status: "ok",
@@ -331,6 +364,9 @@ export async function getStravaData(): Promise<StravaSnapshot> {
       ytd,
       latest,
       recent,
+      hasSoloist: soloistGearId !== null,
+      soloistRides: soloistActivities.length,
+      soloistMiles: fmtMi(soloistMeters),
     };
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);

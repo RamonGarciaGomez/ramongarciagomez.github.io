@@ -47,33 +47,36 @@ function relativeTime(iso: string): string {
 
       <!-- ░░ THIS WEEK ░░ -->
       <section>
-        <p class="eyebrow mb-6">This week</p>
-        <div class="flex items-baseline gap-3 mb-3">
-          <span class="display text-7xl md:text-9xl">{strava.thisWeek.mi}</span>
-          <span class="font-serif italic text-2xl md:text-3xl text-[color:var(--color-muted)]">mi</span>
+        <p class="eyebrow mb-8">This week</p>
+        <div class="flex items-baseline gap-4 mb-4">
+          <span class="stat-num text-7xl md:text-[11rem]">{strava.thisWeek.mi}</span>
+          <span class="mono text-xs uppercase tracking-[0.2em] text-[color:var(--color-muted)] self-end pb-4 md:pb-8">miles</span>
         </div>
-        <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
+        <p class="mono text-xs uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
           {strava.thisWeek.count} {strava.thisWeek.count === 1 ? "activity" : "activities"}
           {strava.thisWeek.count > 0 && (
-            <span> · {strava.thisWeek.duration_fmt} total</span>
+            <span> &nbsp;·&nbsp; {strava.thisWeek.duration_fmt} total</span>
           )}
         </p>
       </section>
 
       <!-- ░░ YEAR TO DATE ░░ -->
       <section>
-        <p class="eyebrow mb-6">Year to date</p>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
+        <p class="eyebrow mb-8">Year to date</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6 border-t border-[color:var(--color-rule)] pt-8">
           {[
-            { label: "Running", value: strava.ytd.run.mi, unit: "mi", count: strava.ytd.run.count, countLabel: "runs" },
-            { label: "Cycling", value: strava.ytd.ride.mi, unit: "mi", count: strava.ytd.ride.count, countLabel: "rides" },
-            { label: "Weight training", value: strava.ytd.weights.hours, unit: "hrs", count: strava.ytd.weights.count, countLabel: "sessions" },
+            { label: "Running", value: strava.ytd.run.mi, unit: "miles", count: strava.ytd.run.count, countLabel: "runs" },
+            { label: "Cycling", value: strava.ytd.ride.mi, unit: "miles", count: strava.ytd.ride.count, countLabel: "rides" },
+            { label: "Weight training", value: strava.ytd.weights.hours, unit: "hours", count: strava.ytd.weights.count, countLabel: "sessions" },
           ].map(({ label, value, unit, count, countLabel }) => (
             <div>
-              <p class="eyebrow mb-2 text-[0.65rem]">{label}</p>
-              <p class="display text-4xl md:text-5xl">{value}</p>
-              <p class="mono text-xs text-[color:var(--color-muted)] mt-1">
-                {unit} · {count} {countLabel}
+              <p class="eyebrow mb-3 text-[0.65rem]">{label}</p>
+              <div class="flex items-baseline gap-2 mb-2">
+                <span class="stat-num text-5xl md:text-6xl">{value}</span>
+                <span class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)]">{unit}</span>
+              </div>
+              <p class="mono text-xs text-[color:var(--color-muted)]">
+                {count} {countLabel}
               </p>
             </div>
           ))}
@@ -94,8 +97,8 @@ function relativeTime(iso: string): string {
             {strava.latest.name}
           </h2>
 
-          <!-- Route + animated bike row -->
-          <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-10 items-center mb-8">
+          <!-- Route -->
+          <div class="mb-8">
             {strava.latest.polyline ? (
               <div class="text-[color:var(--color-accent)]">
                 <RouteSvg polyline={strava.latest.polyline} width={480} height={220} stroke={2} class="w-full h-auto max-w-xl" />
@@ -105,33 +108,27 @@ function relativeTime(iso: string): string {
                 No route data for this activity
               </div>
             )}
-
-            {strava.latest.is_soloist && (
-              <div class="text-[color:var(--color-ink)] md:justify-self-end">
-                <BikeSoloist />
-              </div>
-            )}
           </div>
 
           <!-- Stats grid -->
           <div class="grid grid-cols-2 md:grid-cols-4 gap-6 border-t border-[color:var(--color-rule)] pt-6">
             <div>
-              <p class="eyebrow mb-1 text-[0.65rem]">Distance</p>
-              <p class="font-serif text-2xl">{strava.latest.distance_mi} <span class="text-base text-[color:var(--color-muted)]">mi</span></p>
+              <p class="eyebrow mb-2 text-[0.65rem]">Distance</p>
+              <p class="stat-num text-3xl">{strava.latest.distance_mi}<span class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] ml-1.5">mi</span></p>
             </div>
             {strava.latest.pace_fmt && (
               <div>
-                <p class="eyebrow mb-1 text-[0.65rem]">Pace</p>
-                <p class="font-serif text-2xl">{strava.latest.pace_fmt}</p>
+                <p class="eyebrow mb-2 text-[0.65rem]">Pace</p>
+                <p class="stat-num text-3xl">{strava.latest.pace_fmt}</p>
               </div>
             )}
             <div>
-              <p class="eyebrow mb-1 text-[0.65rem]">Duration</p>
-              <p class="font-serif text-2xl">{strava.latest.moving_time_fmt}</p>
+              <p class="eyebrow mb-2 text-[0.65rem]">Duration</p>
+              <p class="stat-num text-3xl">{strava.latest.moving_time_fmt}</p>
             </div>
             <div>
-              <p class="eyebrow mb-1 text-[0.65rem]">Elevation</p>
-              <p class="font-serif text-2xl">{strava.latest.elevation_ft} <span class="text-base text-[color:var(--color-muted)]">ft</span></p>
+              <p class="eyebrow mb-2 text-[0.65rem]">Elevation</p>
+              <p class="stat-num text-3xl">{strava.latest.elevation_ft}<span class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)] ml-1.5">ft</span></p>
             </div>
           </div>
 
@@ -143,6 +140,31 @@ function relativeTime(iso: string): string {
           >
             → View on Strava
           </a>
+        </section>
+      )}
+
+      <!-- ░░ GEAR ░░ -->
+      {strava.hasSoloist && (
+        <section>
+          <p class="eyebrow mb-6">Gear</p>
+          <div class="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 md:gap-12 items-center border-t border-[color:var(--color-rule)] pt-8">
+            <div class="text-[color:var(--color-ink)]">
+              <BikeSoloist />
+            </div>
+            <div>
+              <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)] mb-2">
+                Road bike · 2023
+              </p>
+              <h3 class="display text-3xl md:text-4xl mb-3">Cervélo Soloist</h3>
+              <p class="font-serif italic text-[color:var(--color-muted)] leading-relaxed max-w-md">
+                The daily driver. Aero-ish aluminum frame, built for long
+                climbs and pavement that never quite flattens.
+              </p>
+              <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)] mt-4">
+                {strava.soloistMiles} mi · {strava.soloistRides} {strava.soloistRides === 1 ? "ride" : "rides"} this year
+              </p>
+            </div>
+          </div>
         </section>
       )}
 

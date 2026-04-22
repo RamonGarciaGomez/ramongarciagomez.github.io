@@ -31,8 +31,18 @@ html {
 /* Display class for hero-sized type */
 .display {
   font-family: var(--font-serif);
-  font-variation-settings: "opsz" 144, "wght" 550;
-  letter-spacing: -0.02em;
+  font-variation-settings: "opsz" 144, "wght" 550, "SOFT" 30;
+  letter-spacing: -0.025em;
+  line-height: 0.92;
+  font-feature-settings: "ss01", "ss02", "ss03";
+}
+
+/* Stat-block numbers — tabular alignment, slightly lighter weight */
+.stat-num {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 144, "wght" 480;
+  font-feature-settings: "tnum", "ss01";
+  letter-spacing: -0.03em;
   line-height: 0.95;
 }
 
@@ -40,15 +50,17 @@ html {
 .mono {
   font-family: var(--font-mono);
   font-variation-settings: "wght" 400;
+  font-feature-settings: "tnum";
 }
 
 /* Eyebrow label — tiny uppercase mono */
 .eyebrow {
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-muted);
+  font-weight: 500;
 }
 
 /* Prose styles for blog/project bodies — editorial serif */
