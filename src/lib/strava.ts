@@ -33,7 +33,7 @@ export interface WeeklyStats {
 export interface YearStats {
   run: { mi: string; count: number };
   ride: { mi: string; count: number };
-  swim: { mi: string; count: number };
+  weights: { hours: string; count: number };
 }
 
 export type StravaSnapshot =
@@ -81,6 +81,25 @@ async function getAccessToken(): Promise<string> {
   const data = await res.json();
   _cachedToken = data.access_token as string;
   return _cachedToken!;
+}
+
+/** Fetch all activities since `afterUnix`, paginating until exhausted. */
+async function fetchAllActivities(
+  token: string,
+  afterUnix: number
+): Promise<unknown[]> {
+  const out: unknown[] = [];
+  const perPage = 200;
+  for (let page = 1; page <= 10; page++) {
+    const batch = (await stravaGet(
+      `/athlete/activities?after=${afterUnix}&per_page=${perPage}&page=${page}`,
+      token
+    )) as unknown[];
+    if (!Array.isArray(batch) || batch.length === 0) break;
+    out.push(...batch);
+    if (batch.length < perPage) break;
+  }
+  return out;
 }
 
 async function stravaGet(path: string, token: string): Promise<unknown> {
@@ -199,7 +218,12 @@ export async function getStravaData(): Promise<StravaSnapshot> {
     const athleteId = import.meta.env.STRAVA_ATHLETE_ID;
 
     const sixtyDaysAgo = Math.floor(Date.now() / 1000) - 60 * 24 * 3600;
-    const [rawActivities, rawStats, rawAthlete] = await Promise.all([
+    // Unix timestamp for Jan 1 of current year, UTC
+    const yearStart = Math.floor(
+      Date.UTC(new Date().getUTCFullYear(), 0, 1) / 1000
+    );
+
+    const [rawActivities, rawStats, rawAthlete, ytdActivities] = await Promise.all([
       stravaGet(
         `/athlete/activities?after=${sixtyDaysAgo}&per_page=60`,
         token
@@ -208,6 +232,7 @@ export async function getStravaData(): Promise<StravaSnapshot> {
         ? (stravaGet(`/athletes/${athleteId}/stats`, token) as Promise<unknown>)
         : Promise.resolve(null),
       stravaGet("/athlete", token) as Promise<unknown>,
+      fetchAllActivities(token, yearStart),
     ]);
 
     // Build gear_id → name map from athlete's bikes + shoes
@@ -263,29 +288,38 @@ export async function getStravaData(): Promise<StravaSnapshot> {
       duration_fmt: fmtDuration(weekTotalS),
     };
 
-    // ── YTD from athlete stats ─────────────────────────────────────────────
+    // ── YTD: running + cycling from stats endpoint, weight training
+    //         computed from activity list ──────────────────────────────────
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const s = rawStats as any;
-    const ytd: YearStats = s
-      ? {
-          run: {
+    const weightActivities = ytdActivities.filter(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (a) => (a as any).sport_type === "WeightTraining"
+    );
+    const weightSeconds = weightActivities.reduce(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (sum, a) => sum + ((a as any).moving_time ?? (a as any).elapsed_time ?? 0),
+      0
+    );
+
+    const ytd: YearStats = {
+      run: s
+        ? {
             mi: fmtMi(s.ytd_run_totals?.distance ?? 0),
             count: s.ytd_run_totals?.count ?? 0,
-          },
-          ride: {
+          }
+        : { mi: "0.0", count: 0 },
+      ride: s
+        ? {
             mi: fmtMi(s.ytd_ride_totals?.distance ?? 0),
             count: s.ytd_ride_totals?.count ?? 0,
-          },
-          swim: {
-            mi: fmtMi(s.ytd_swim_totals?.distance ?? 0),
-            count: s.ytd_swim_totals?.count ?? 0,
-          },
-        }
-      : {
-          run: { mi: "0.0", count: 0 },
-          ride: { mi: "0.0", count: 0 },
-          swim: { mi: "0.0", count: 0 },
-        };
+          }
+        : { mi: "0.0", count: 0 },
+      weights: {
+        hours: (weightSeconds / 3600).toFixed(1),
+        count: weightActivities.length,
+      },
+    };
 
     const latest = activities[0] ?? null;
     const recent = activities.slice(0, 10);

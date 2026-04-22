@@ -65,15 +65,15 @@ function relativeTime(iso: string): string {
         <p class="eyebrow mb-6">Year to date</p>
         <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
           {[
-            { label: "Running", mi: strava.ytd.run.mi, count: strava.ytd.run.count, unit: "runs" },
-            { label: "Cycling", mi: strava.ytd.ride.mi, count: strava.ytd.ride.count, unit: "rides" },
-            { label: "Swimming", mi: strava.ytd.swim.mi, count: strava.ytd.swim.count, unit: "swims" },
-          ].map(({ label, mi, count, unit }) => (
+            { label: "Running", value: strava.ytd.run.mi, unit: "mi", count: strava.ytd.run.count, countLabel: "runs" },
+            { label: "Cycling", value: strava.ytd.ride.mi, unit: "mi", count: strava.ytd.ride.count, countLabel: "rides" },
+            { label: "Weight training", value: strava.ytd.weights.hours, unit: "hrs", count: strava.ytd.weights.count, countLabel: "sessions" },
+          ].map(({ label, value, unit, count, countLabel }) => (
             <div>
               <p class="eyebrow mb-2 text-[0.65rem]">{label}</p>
-              <p class="display text-4xl md:text-5xl">{mi}</p>
+              <p class="display text-4xl md:text-5xl">{value}</p>
               <p class="mono text-xs text-[color:var(--color-muted)] mt-1">
-                mi · {count} {unit}
+                {unit} · {count} {countLabel}
               </p>
             </div>
           ))}
