@@ -242,7 +242,7 @@ function relativeTime(iso: string): string {
                   href={activity.strava_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="group grid grid-cols-[auto_1fr_auto_auto] gap-x-4 md:gap-x-6 gap-y-1 py-4 md:py-5 items-center"
+                  class="group grid grid-cols-[auto_1fr_auto_auto] gap-x-3 md:gap-x-6 gap-y-1 py-4 md:py-5 items-center"
                 >
                   <span class="mono text-xs text-[color:var(--color-muted)] group-hover:text-[color:var(--color-accent)] transition-colors shrink-0 self-start mt-1">
                     {activity.catalog}
@@ -259,9 +259,9 @@ function relativeTime(iso: string): string {
                       )}
                     </p>
                   </div>
-                  <span class="col-start-3 text-[color:var(--color-accent)] hidden sm:block shrink-0">
+                  <span class="col-start-3 text-[color:var(--color-accent)] shrink-0">
                     {activity.polyline && (
-                      <RouteSvg polyline={activity.polyline} width={120} height={40} stroke={1.2} />
+                      <RouteSvg polyline={activity.polyline} width={80} height={34} stroke={1.2} class="sm:w-[120px] sm:h-[40px]" />
                     )}
                   </span>
                   <span class="col-start-4 mono text-xs text-[color:var(--color-muted)] tracking-widest shrink-0 text-right self-start mt-1">
