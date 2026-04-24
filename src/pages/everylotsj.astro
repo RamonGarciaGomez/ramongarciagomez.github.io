@@ -407,8 +407,27 @@ function loadLeaflet(): Promise<void> {
 }
 
 (async () => {
+  // Fetch metrics immediately — don't block on Leaflet
+  const data = await fetchMetrics();
+  const loading = document.getElementById("loading-state");
+  const main    = document.getElementById("main-stats");
+  const err     = document.getElementById("error-state");
+
+  if (!data) {
+    loading?.classList.add("hidden");
+    err?.classList.remove("hidden");
+  } else {
+    metricsData = data;
+    loading?.classList.add("hidden");
+    err?.classList.add("hidden");
+    main?.classList.remove("hidden");
+    renderStats(data);
+  }
+
+  // Load Leaflet separately — map renders after
   await loadLeaflet();
-  await tick();
+  if (data) await renderMap(data);
+
   setInterval(tick, POLL_MS);
 })();
 </script>
