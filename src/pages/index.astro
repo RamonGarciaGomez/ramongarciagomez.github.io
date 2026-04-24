@@ -59,16 +59,13 @@ const establishedMonth = oldest.toLocaleDateString("en-US", {
     </h1>
 
     <p class="font-serif italic text-xl md:text-2xl text-[color:var(--color-ink)] max-w-xl leading-snug mb-6">
-      Writer, builder, and student of most things. Keeping a public record of what
-      I make, read, and think about.
+      Writer, builder, and student of most things.
     </p>
 
     <div class="flex flex-wrap gap-x-5 gap-y-1 mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
       <span>→ {totalCount} {totalCount === 1 ? "entry" : "entries"}</span>
       <span aria-hidden="true">·</span>
       <span>{NOW.location}</span>
-      <span aria-hidden="true">·</span>
-      <span>Est. {establishedMonth}</span>
     </div>
   </section>
 

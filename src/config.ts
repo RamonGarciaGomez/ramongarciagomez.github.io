@@ -13,6 +13,6 @@ export const NOW = {
   book: {
     title: "King: A Life",
     author: "Jonathan Eig",
-    url: "https://www.goodreads.com/book/show/57693425",
+    url: "https://www.goodreads.com/en/book/show/62039291-king",
   },
 };
