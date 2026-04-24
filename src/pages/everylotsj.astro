@@ -1,0 +1,433 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="@everylotSJ"
+  description="Live dashboard for @everylotSJ — a bot posting every address in San José, one every 2 minutes."
+>
+  <link
+    slot="head"
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <!-- ░░ HEADER ░░ -->
+  <header class="pt-4 pb-12 md:pb-16">
+    <p class="eyebrow mb-5">Project</p>
+    <h1 class="display text-5xl md:text-7xl mb-6">@everylotSJ</h1>
+    <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
+      Posting every address in San José · One every 2 minutes ·
+      <a
+        href="https://mastodon.social/@everylotsj"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hover:text-[color:var(--color-accent)] transition-colors"
+      >mastodon.social/@everylotsj</a>
+    </p>
+  </header>
+
+  <div class="border-t-2 border-[color:var(--color-ink)]"></div>
+  <div class="border-t border-[color:var(--color-ink)] mt-[2px]"></div>
+
+  <div class="pt-10 space-y-16" id="dashboard">
+
+    <!-- ░░ LOADING STATE ░░ -->
+    <div id="loading-state" class="py-20 text-center">
+      <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
+        Loading bot status…
+      </p>
+    </div>
+
+    <!-- ░░ MAIN STATS ░░ (hidden until data loads) -->
+    <div id="main-stats" class="hidden space-y-16">
+
+      <!-- Progress -->
+      <section>
+        <p class="eyebrow mb-8">Progress</p>
+        <div class="flex items-baseline gap-4 mb-6">
+          <span id="stat-posted" class="stat-num text-7xl md:text-[9rem]">—</span>
+          <div class="self-end pb-4 md:pb-8">
+            <p class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)]">of 394,000</p>
+            <p class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)]">addresses</p>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="w-full h-1.5 bg-[color:var(--color-rule)] mb-3">
+          <div
+            id="progress-bar"
+            class="h-full bg-[color:var(--color-ink)] transition-all duration-700"
+            style="width: 0%"
+          ></div>
+        </div>
+        <p id="stat-pct" class="mono text-xs uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+          0% complete
+        </p>
+      </section>
+
+      <!-- Current + ETA -->
+      <section>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 border-t border-[color:var(--color-rule)] pt-8">
+          <div>
+            <p class="eyebrow mb-3">Last posted</p>
+            <p id="stat-address" class="font-serif text-xl md:text-2xl leading-snug mb-2">—</p>
+            <p id="stat-meta" class="mono text-xs text-[color:var(--color-muted)] uppercase tracking-widest">—</p>
+          </div>
+          <div class="grid grid-cols-2 gap-6">
+            <div>
+              <p class="eyebrow mb-2">Neighborhood</p>
+              <p id="stat-neighborhood" class="font-serif text-lg italic">—</p>
+            </div>
+            <div>
+              <p class="eyebrow mb-2">Est. complete</p>
+              <p id="stat-eta" class="font-serif text-lg">—</p>
+            </div>
+            <div>
+              <p class="eyebrow mb-2">Rate</p>
+              <p class="font-serif text-lg">720<span class="mono text-xs text-[color:var(--color-muted)] ml-1">/day</span></p>
+            </div>
+            <div>
+              <p class="eyebrow mb-2">Remaining</p>
+              <p id="stat-remaining" class="font-serif text-lg">—</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Map -->
+      <section>
+        <div class="flex items-baseline justify-between mb-6 flex-wrap gap-4">
+          <p class="eyebrow">San José zip codes</p>
+          <div class="flex gap-5 mono text-[0.65rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+            <span class="flex items-center gap-1.5">
+              <span class="inline-block w-3 h-3 bg-[#141210] opacity-70"></span>Complete
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="inline-block w-3 h-3 bg-[color:var(--color-accent)]"></span>In progress
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="inline-block w-3 h-3 bg-[color:var(--color-rule)]"></span>Not started
+            </span>
+          </div>
+        </div>
+        <div
+          id="bot-map"
+          class="w-full border border-[color:var(--color-rule)]"
+          style="height: 420px;"
+        ></div>
+        <p class="mono text-[0.65rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)] mt-3">
+          Hover a zip code for posted count. Map updates every 60 seconds.
+        </p>
+      </section>
+
+      <!-- Footer sync note -->
+      <p id="stat-synced" class="mono text-xs text-[color:var(--color-muted)] pb-4">
+        —
+      </p>
+
+    </div><!-- /main-stats -->
+
+    <!-- ░░ ERROR STATE ░░ -->
+    <div id="error-state" class="hidden py-20 text-center">
+      <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
+        Bot status unavailable · Check back soon
+      </p>
+    </div>
+
+  </div><!-- /dashboard -->
+</BaseLayout>
+
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────────
+// Replace with your public metrics.json URL after setting up GCS (see README).
+const METRICS_URL = "https://storage.googleapis.com/everylotsj-metrics/metrics.json";
+
+const POLL_MS   = 60_000;  // refresh data every 60 seconds
+const GEO_TTL   = 86_400_000; // cache GeoJSON for 24 hours
+const GEO_URL   = "https://raw.githubusercontent.com/OpenDataDE/State-zip-code-GeoJSON/master/ca_california_zip_codes_geo.min.json";
+const POSTS_PER_DAY = 720; // one every 2 minutes
+
+// San José zip codes (City of SJ + close unincorporated)
+const SJ_ZIPS = new Set([
+  "95002","95008","95013","95032","95035","95037",
+  "95050","95051","95052","95053","95054","95055","95056",
+  "95101","95103","95106","95108","95109","95110","95111",
+  "95112","95113","95115","95116","95117","95118","95119",
+  "95120","95121","95122","95123","95124","95125","95126",
+  "95127","95128","95129","95130","95131","95132","95133",
+  "95134","95135","95136","95138","95139","95140","95141","95148",
+]);
+
+// Design tokens (keep in sync with global.css)
+const C = {
+  ink:     "#141210",
+  accent:  "#b8441f",
+  rule:    "#d1c9b6",
+  paper:   "#f0ebe0",
+  muted:   "#5b5750",
+};
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let map: L.Map | null = null;
+let geojsonLayer: L.GeoJSON | null = null;
+let cachedGeo: GeoJSON.FeatureCollection | null = null;
+let metricsData: MetricsData | null = null;
+
+interface MetricsData {
+  last_post: {
+    id: number;
+    address: string;
+    zip: string;
+    neighborhood?: string;
+    place_type?: string;
+    image_source?: string;
+    posted_at: string;
+  };
+  total_posted: number;
+  total_lots: number;
+  percent_complete: number;
+  zip_stats?: Record<string, { posted: number; total: number; complete: boolean }>;
+  updated_at: string;
+}
+
+// ─── Fetch metrics ────────────────────────────────────────────────────────────
+async function fetchMetrics(): Promise<MetricsData | null> {
+  try {
+    const res = await fetch(`${METRICS_URL}?t=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json() as MetricsData;
+  } catch (e) {
+    console.warn("[everylotsj] metrics fetch failed:", e);
+    return null;
+  }
+}
+
+// ─── Fetch + cache GeoJSON ────────────────────────────────────────────────────
+async function loadGeoJSON(): Promise<GeoJSON.FeatureCollection | null> {
+  if (cachedGeo) return cachedGeo;
+  try {
+    const stored = localStorage.getItem("everylotsj_geo");
+    if (stored) {
+      const { ts, data } = JSON.parse(stored);
+      if (Date.now() - ts < GEO_TTL) {
+        cachedGeo = data as GeoJSON.FeatureCollection;
+        return cachedGeo;
+      }
+    }
+  } catch {}
+
+  try {
+    const res = await fetch(GEO_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const full = await res.json() as GeoJSON.FeatureCollection;
+    const filtered: GeoJSON.FeatureCollection = {
+      ...full,
+      features: full.features.filter(
+        (f) => SJ_ZIPS.has((f.properties as Record<string,string>)["ZCTA5CE10"])
+      ),
+    };
+    try {
+      localStorage.setItem("everylotsj_geo", JSON.stringify({ ts: Date.now(), data: filtered }));
+    } catch {}
+    cachedGeo = filtered;
+    return filtered;
+  } catch (e) {
+    console.warn("[everylotsj] GeoJSON fetch failed:", e);
+    return null;
+  }
+}
+
+// ─── Map helpers ──────────────────────────────────────────────────────────────
+function zipState(zip: string, data: MetricsData): "complete" | "active" | "none" {
+  if (data.zip_stats) {
+    const s = data.zip_stats[zip];
+    if (!s) return "none";
+    if (s.complete) return "complete";
+    if (s.posted > 0) return "active";
+    return "none";
+  }
+  // Fallback: only highlight current zip if no zip_stats
+  return data.last_post.zip === zip ? "active" : "none";
+}
+
+function zipStyle(zip: string, data: MetricsData): L.PathOptions {
+  const state = zipState(zip, data);
+  return {
+    weight: 0.8,
+    color: C.ink,
+    opacity: 0.5,
+    fillOpacity: state === "complete" ? 0.65 : state === "active" ? 0.55 : 0.15,
+    fillColor: state === "complete" ? C.ink : state === "active" ? C.accent : C.rule,
+  };
+}
+
+function zipTooltip(zip: string, data: MetricsData): string {
+  const state = zipState(zip, data);
+  const s = data.zip_stats?.[zip];
+  const detail = s
+    ? `${s.posted.toLocaleString()} / ${s.total.toLocaleString()} addresses`
+    : state === "active" ? "Currently posting here" : "Not started";
+  return `<span style="font-family:ui-monospace,monospace;font-size:11px;"><strong>${zip}</strong><br/>${detail}</span>`;
+}
+
+// ─── Map init / update ────────────────────────────────────────────────────────
+async function renderMap(data: MetricsData) {
+  const L = (window as Record<string,unknown>)["L"] as typeof import("leaflet");
+  if (!L) return;
+
+  if (!map) {
+    map = L.map("bot-map", {
+      center: [37.338, -121.886],
+      zoom: 11,
+      zoomControl: true,
+      scrollWheelZoom: false,
+    });
+    L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+      {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        maxZoom: 14,
+      }
+    ).addTo(map);
+  }
+
+  const geo = await loadGeoJSON();
+  if (!geo) return;
+
+  if (geojsonLayer) geojsonLayer.remove();
+
+  geojsonLayer = L.geoJSON(geo as GeoJSON.GeoJsonObject, {
+    style: (feature) => {
+      const zip = (feature!.properties as Record<string,string>)["ZCTA5CE10"];
+      return zipStyle(zip, data);
+    },
+    onEachFeature: (feature, layer) => {
+      const zip = (feature.properties as Record<string,string>)["ZCTA5CE10"];
+      layer.bindTooltip(zipTooltip(zip, data), { sticky: true });
+      layer.on("mouseover", (e) => {
+        (e.target as L.Path).setStyle({ weight: 2, opacity: 1 });
+      });
+      layer.on("mouseout", (e) => {
+        (e.target as L.Path).setStyle(zipStyle(zip, data));
+      });
+    },
+  }).addTo(map);
+}
+
+// ─── DOM helpers ─────────────────────────────────────────────────────────────
+function setText(id: string, val: string) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short", day: "numeric", year: "numeric",
+  });
+}
+
+function calcETA(remaining: number): string {
+  const days = remaining / POSTS_PER_DAY;
+  const eta = new Date(Date.now() + days * 86_400_000);
+  return eta.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+function relTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+// ─── Render stats ─────────────────────────────────────────────────────────────
+function renderStats(data: MetricsData) {
+  const remaining = data.total_lots - data.total_posted;
+  const pct = ((data.total_posted / data.total_lots) * 100).toFixed(2);
+  const bar = document.getElementById("progress-bar");
+  if (bar) bar.style.width = `${pct}%`;
+
+  setText("stat-posted",       data.total_posted.toLocaleString());
+  setText("stat-pct",          `${pct}% complete`);
+  setText("stat-address",      data.last_post.address);
+  setText("stat-neighborhood", data.last_post.neighborhood ?? "—");
+  setText("stat-remaining",    `${remaining.toLocaleString()}`);
+  setText("stat-eta",          calcETA(remaining));
+  setText("stat-meta",
+    [
+      data.last_post.place_type,
+      `ZIP ${data.last_post.zip}`,
+      relTime(data.last_post.posted_at),
+    ].filter(Boolean).join(" · ")
+  );
+  setText("stat-synced",
+    `Bot data last updated ${relTime(data.updated_at)} · refreshes every 60 s`
+  );
+}
+
+// ─── Main loop ────────────────────────────────────────────────────────────────
+async function tick() {
+  const data = await fetchMetrics();
+  const loading = document.getElementById("loading-state");
+  const main    = document.getElementById("main-stats");
+  const err     = document.getElementById("error-state");
+
+  if (!data) {
+    loading?.classList.add("hidden");
+    main?.classList.add("hidden");
+    err?.classList.remove("hidden");
+    return;
+  }
+
+  metricsData = data;
+  loading?.classList.add("hidden");
+  err?.classList.add("hidden");
+  main?.classList.remove("hidden");
+
+  renderStats(data);
+  await renderMap(data);
+}
+
+// ─── Bootstrap: load Leaflet JS then start ────────────────────────────────────
+function loadLeaflet(): Promise<void> {
+  return new Promise((resolve) => {
+    if ((window as Record<string,unknown>)["L"]) { resolve(); return; }
+    const s = document.createElement("script");
+    s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    s.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLs=";
+    s.crossOrigin = "";
+    s.onload = () => resolve();
+    document.head.appendChild(s);
+  });
+}
+
+(async () => {
+  await loadLeaflet();
+  await tick();
+  setInterval(tick, POLL_MS);
+})();
+</script>
+
+<style>
+  /* Override Leaflet's default blue focus ring to match palette */
+  .leaflet-container {
+    background: var(--color-paper);
+    font-family: var(--font-mono);
+  }
+  .leaflet-tooltip {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 4px 8px;
+  }
+  .leaflet-tooltip-top::before {
+    border-top-color: var(--color-ink);
+  }
+</style>

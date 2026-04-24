@@ -1,0 +1,47 @@
+---
+title: "@everylotSJ"
+description: "A bot that posts every address in San Jose to Mastodon, one every 30 minutes, with a Google Street View photo."
+date: 2026-04-22
+tags: ["bots", "san jose", "python", "open data"]
+---
+
+San Jose has 394,000 active addresses. I'm posting every single one.
+
+[@everylotSJ](https://mastodon.social/@everylotsj) is a Mastodon bot that picks a random San Jose address every 30 minutes, fetches a Google Street View photo, and posts it — the address, the property type, and whatever the camera happened to catch that day. At this rate, it'll take about 16 months to work through the whole city.
+
+## Why San Jose
+
+The direct inspiration was [@everylotNYC](https://github.com/fitnr/everylot), a bot by [@fitnr](https://github.com/fitnr) that did the same thing for New York. The concept is simple and quietly compelling: a city rendered one address at a time, no curation, no narrative — just the fabric of a place as it actually is.
+
+San Jose felt like the right target. It's the largest city in the Bay Area by area and population but consistently underrepresented in how people talk about the region. It's mostly known as "where the airport is" or a punchline about suburban sprawl. But it's also 177 square miles of quiet cul-de-sacs, mid-century apartment complexes, Vietnamese strip malls, industrial parks, and the kind of everyday built environment that doesn't get photographed on purpose. This bot photographs it anyway.
+
+## How it works
+
+The address data comes from the City of San Jose's open GIS dataset — 394,000 active address points, each with coordinates and property classification. That's the database.
+
+Every 30 minutes, a cron job on a Google Cloud e2-micro VM (free tier) wakes up the bot, which:
+
+1. Pulls a random unposted address from the SQLite database
+2. Calls the Google Street View Static API with those coordinates
+3. Gets back a JPEG — whatever Street View has for that location
+4. Posts the image to Mastodon via [Mastodon.py](https://mastodonpy.readthedocs.io/), with the address and property type as the caption
+5. Marks that address as posted so it doesn't repeat
+
+The whole thing is Python. The database is SQLite. The VM costs nothing. The only real cost is the Street View API, which I'm watching closely.
+
+## What it finds
+
+Most posts are unremarkable, which is the point. A beige garage door in Willow Glen. A parking lot off Monterey Road. A warehouse near the airport. Occasionally something interesting surfaces: a mural, a house that's clearly been divided into four units, a lot that's just dirt with an address. The randomness is the feature — no algorithm deciding what's worth seeing, just the city in full.
+
+Some addresses return no Street View imagery at all, which tells its own story about which parts of a city Google has decided to photograph carefully and which it hasn't.
+
+## Stack
+
+- **Language**: Python
+- **Data**: City of San Jose open GIS data (394,000 address points)
+- **Images**: Google Street View Static API
+- **Posting**: Mastodon.py → [mastodon.social/@everylotsj](https://mastodon.social/@everylotsj)
+- **Storage**: SQLite
+- **Infrastructure**: Google Cloud e2-micro VM, cron every 30 minutes
+
+**GitHub:** [RamonGarciaGomez/everylotsj](https://github.com/RamonGarciaGomez/everylotsj)

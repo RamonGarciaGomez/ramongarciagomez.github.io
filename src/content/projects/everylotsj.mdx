@@ -1,0 +1,26 @@
+---
+title: "@everylotSJ"
+description: "A bot that posts every address in San José to Mastodon — 394,000 addresses, one every 2 minutes, with a Google Street View photo."
+date: 2026-04-23
+status: active
+tags: ["python", "bots", "open data", "san jose"]
+repo: "https://github.com/RamonGarciaGomez/everylotsj"
+---
+
+Every 2 minutes, a bot picks a random San José address from a database of 394,000,
+fetches a Google Street View photo, and posts it to Mastodon. No curation — just
+the city as it actually is, one address at a time.
+
+→ [Live dashboard](/everylotsj) — progress map, current address, estimated completion  
+→ [Follow on Mastodon](https://mastodon.social/@everylotsj)
+
+## Stack
+
+- **Language**: Python
+- **Data**: City of San José open GIS data (394,000 address points)
+- **Images**: Google Street View Static API
+- **Posting**: Mastodon.py
+- **Storage**: SQLite
+- **Infrastructure**: Google Cloud e2-micro VM, cron every 2 minutes
+
+Inspired by [everylot](https://github.com/fitnr/everylot) by @fitnr.
