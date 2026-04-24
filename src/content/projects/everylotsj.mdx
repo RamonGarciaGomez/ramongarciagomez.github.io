@@ -7,20 +7,45 @@ tags: ["python", "bots", "open data", "san jose"]
 repo: "https://github.com/RamonGarciaGomez/everylotsj"
 ---
 
-Every 2 minutes, a bot picks a random San José address from a database of 394,000,
-fetches a Google Street View photo, and posts it to Mastodon. No curation — just
-the city as it actually is, one address at a time.
+San José has 394,000 active addresses. I'm posting every single one.
 
-→ [Live dashboard](/everylotsj) — progress map, current address, estimated completion  
+[@everylotSJ](https://mastodon.social/@everylotsj) is a Mastodon bot that picks a random San José address every 2 minutes, fetches a Google Street View photo, and posts it — the address, the property type, and whatever the camera happened to catch that day. At this rate, it'll take about 18 months to work through the whole city.
+
+→ [Live dashboard](/everylotsj) — real-time progress map, current address, estimated completion  
 → [Follow on Mastodon](https://mastodon.social/@everylotsj)
+
+## Why San José
+
+The direct inspiration was [@everylotNYC](https://github.com/fitnr/everylot), a bot by [@fitnr](https://github.com/fitnr) that did the same thing for New York. The concept is simple and quietly compelling: a city rendered one address at a time, no curation, no narrative — just the fabric of a place as it actually is.
+
+San José felt like the right target. It's the largest city in the Bay Area by area and population but consistently underrepresented in how people talk about the region. It's mostly known as "where the airport is" or a punchline about suburban sprawl. But it's also 177 square miles of quiet cul-de-sacs, mid-century apartment complexes, Vietnamese strip malls, industrial parks, and the kind of everyday built environment that doesn't get photographed on purpose. This bot photographs it anyway.
+
+## How it works
+
+The address data comes from the City of San José's open GIS dataset — 394,000 active address points, each with coordinates and property classification. That's the database.
+
+Every 2 minutes, a cron job on a Google Cloud e2-micro VM (free tier) wakes up the bot, which:
+
+1. Pulls a random unposted address from the SQLite database
+2. Calls the Google Street View Static API with those coordinates
+3. Gets back a JPEG — whatever Street View has for that location
+4. Posts the image to Mastodon via [Mastodon.py](https://mastodonpy.readthedocs.io/), with the address and property type as the caption
+5. Marks that address as posted so it doesn't repeat
+6. Uploads live stats to Google Cloud Storage for the dashboard
+
+## What it finds
+
+Most posts are unremarkable, which is the point. A beige garage door in Willow Glen. A parking lot off Monterey Road. A warehouse near the airport. Occasionally something interesting surfaces: a mural, a house that's clearly been divided into four units, a lot that's just dirt with an address. The randomness is the feature — no algorithm deciding what's worth seeing, just the city in full.
+
+Some addresses return no Street View imagery at all, which tells its own story about which parts of a city Google has decided to photograph carefully and which it hasn't.
 
 ## Stack
 
 - **Language**: Python
 - **Data**: City of San José open GIS data (394,000 address points)
 - **Images**: Google Street View Static API
-- **Posting**: Mastodon.py
-- **Storage**: SQLite
+- **Posting**: Mastodon.py → [mastodon.social/@everylotsj](https://mastodon.social/@everylotsj)
+- **Storage**: SQLite + Google Cloud Storage (live metrics)
 - **Infrastructure**: Google Cloud e2-micro VM, cron every 2 minutes
 
 Inspired by [everylot](https://github.com/fitnr/everylot) by @fitnr.

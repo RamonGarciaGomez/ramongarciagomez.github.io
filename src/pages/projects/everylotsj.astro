@@ -1,0 +1,355 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCatalogId } from "../../lib/catalog";
+
+const catalog = await getCatalogId("project", "everylotsj");
+const dateStr = new Date("2026-04-23")
+  .toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit" })
+  .toUpperCase();
+---
+
+<BaseLayout
+  title="@everylotSJ"
+  description="A bot posting every address in San José to Mastodon — 394,000 addresses, one every 2 minutes."
+>
+  <link slot="head" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+  <!-- ░░ PROJECT HEADER ░░ -->
+  <div class="pt-2 pb-6 mono text-xs uppercase tracking-widest text-[color:var(--color-muted)] flex flex-wrap gap-x-3 gap-y-1">
+    <a href="/projects" class="hover:text-[color:var(--color-accent)] transition-colors">Projects</a>
+    <span aria-hidden="true">·</span>
+    <span>{catalog}</span>
+    <span aria-hidden="true">·</span>
+    <span>{dateStr}</span>
+    <span aria-hidden="true">·</span>
+    <span class="text-[color:var(--color-accent)]">[active]</span>
+  </div>
+
+  <h1 class="display text-4xl md:text-6xl mb-5">@everylotSJ</h1>
+  <p class="font-serif italic text-xl md:text-2xl text-[color:var(--color-muted)] max-w-2xl leading-snug mb-6">
+    A bot posting every address in San José to Mastodon — 394,000 addresses, one every 2 minutes.
+  </p>
+
+  <ul class="flex flex-wrap gap-x-3 gap-y-1 mono text-[0.7rem] uppercase tracking-widest text-[color:var(--color-muted)] mb-8">
+    {["python", "bots", "open data", "san jose"].map((t) => <li>#{t}</li>)}
+  </ul>
+
+  <p class="mono text-xs uppercase tracking-widest flex gap-5 mb-10">
+    <a href="https://mastodon.social/@everylotsj" target="_blank" rel="noopener noreferrer"
+       class="text-[color:var(--color-accent)] hover:underline underline-offset-4">→ Mastodon</a>
+    <a href="https://github.com/RamonGarciaGomez/everylotsj" target="_blank" rel="noopener noreferrer"
+       class="text-[color:var(--color-accent)] hover:underline underline-offset-4">→ Repository</a>
+  </p>
+
+  <div class="border-t border-[color:var(--color-rule)] mb-10"></div>
+
+  <!-- ░░ WRITTEN DESCRIPTION ░░ -->
+  <article class="prose-post mx-0 mb-16">
+    <p>
+      San José has 394,000 active addresses. I'm posting every single one. Every 2 minutes,
+      the bot picks a random unposted address from a SQLite database, fetches a Google Street
+      View photo, and posts it to Mastodon — the address, the property type, and whatever the
+      camera happened to catch that day. At this rate, it'll take about 18 months to work
+      through the whole city.
+    </p>
+    <p>
+      San José felt like the right target. It's the largest city in the Bay Area by area and
+      population but consistently underrepresented in how people talk about the region. It's
+      mostly known as "where the airport is" or a punchline about suburban sprawl. But it's
+      also 177 square miles of quiet cul-de-sacs, mid-century apartment complexes, Vietnamese
+      strip malls, industrial parks, and the kind of everyday built environment that doesn't
+      get photographed on purpose. This bot photographs it anyway.
+    </p>
+    <p>
+      Inspired by <a href="https://github.com/fitnr/everylot">everylot</a> by @fitnr.
+      Stack: Python · SQLite · Google Street View API · Mastodon.py · Google Cloud e2-micro VM.
+    </p>
+  </article>
+
+  <!-- ░░ DOUBLE RULE ░░ -->
+  <div class="border-t-2 border-[color:var(--color-ink)]"></div>
+  <div class="border-t border-[color:var(--color-ink)] mt-[2px] mb-10"></div>
+
+  <!-- ░░ LIVE DASHBOARD ░░ -->
+  <div class="space-y-16" id="dashboard">
+
+    <div id="loading-state" class="py-20 text-center">
+      <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">Loading bot status…</p>
+    </div>
+
+    <div id="main-stats" class="hidden space-y-16">
+
+      <!-- Progress -->
+      <section>
+        <p class="eyebrow mb-8">Progress</p>
+        <div class="flex items-baseline gap-4 mb-6">
+          <span id="stat-posted" class="stat-num text-7xl md:text-[9rem]">—</span>
+          <div class="self-end pb-4 md:pb-8">
+            <p class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)]">of 394,000</p>
+            <p class="mono text-[0.65rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)]">addresses</p>
+          </div>
+        </div>
+        <div class="w-full h-1.5 bg-[color:var(--color-rule)] mb-3">
+          <div id="progress-bar" class="h-full bg-[color:var(--color-ink)] transition-all duration-700" style="width: 0%"></div>
+        </div>
+        <p id="stat-pct" class="mono text-xs uppercase tracking-[0.18em] text-[color:var(--color-muted)]">0% complete</p>
+      </section>
+
+      <!-- Current + ETA -->
+      <section>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 border-t border-[color:var(--color-rule)] pt-8">
+          <div>
+            <p class="eyebrow mb-3">Last posted</p>
+            <p id="stat-address" class="font-serif text-xl md:text-2xl leading-snug mb-2">—</p>
+            <p id="stat-meta" class="mono text-xs text-[color:var(--color-muted)] uppercase tracking-widest mb-1">—</p>
+            <a id="stat-mastodon-link" href="#" target="_blank" rel="noopener noreferrer"
+               class="mono text-xs text-[color:var(--color-muted)] hover:text-[color:var(--color-accent)] transition-colors hidden">→ View on Mastodon</a>
+          </div>
+          <div class="grid grid-cols-2 gap-6">
+            <div>
+              <p class="eyebrow mb-2">Neighborhood</p>
+              <p id="stat-neighborhood" class="font-serif text-lg italic">—</p>
+            </div>
+            <div>
+              <p class="eyebrow mb-2">Est. complete</p>
+              <p id="stat-eta" class="font-serif text-lg">—</p>
+            </div>
+            <div>
+              <p class="eyebrow mb-2">Rate</p>
+              <p class="font-serif text-lg">720<span class="mono text-xs text-[color:var(--color-muted)] ml-1">/day</span></p>
+            </div>
+            <div>
+              <p class="eyebrow mb-2">Remaining</p>
+              <p id="stat-remaining" class="font-serif text-lg">—</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Map -->
+      <section>
+        <div class="flex items-baseline justify-between mb-6 flex-wrap gap-4">
+          <p class="eyebrow">San José zip codes</p>
+          <div class="flex gap-5 mono text-[0.65rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 bg-[#141210] opacity-70"></span>Complete</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 bg-[color:var(--color-accent)]"></span>In progress</span>
+            <span class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 bg-[color:var(--color-rule)]"></span>Not started</span>
+          </div>
+        </div>
+        <div id="bot-map" class="w-full border border-[color:var(--color-rule)]" style="height: 420px;"></div>
+        <p class="mono text-[0.65rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)] mt-3">
+          Hover a zip code for posted count. Map updates every 60 seconds.
+        </p>
+      </section>
+
+      <p id="stat-synced" class="mono text-xs text-[color:var(--color-muted)] pb-4">—</p>
+
+    </div><!-- /main-stats -->
+
+    <div id="error-state" class="hidden py-20 text-center">
+      <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">Bot status unavailable · Check back soon</p>
+    </div>
+
+  </div><!-- /dashboard -->
+
+  <!-- Back link -->
+  <div class="mt-20 pt-8 border-t border-[color:var(--color-rule)]">
+    <a href="/projects" class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)] hover:text-[color:var(--color-accent)] transition-colors">
+      ← Back to projects
+    </a>
+  </div>
+
+</BaseLayout>
+
+<script>
+const METRICS_URL = "https://storage.googleapis.com/everylotsj-metrics/metrics.json";
+const POLL_MS = 60_000;
+const GEO_TTL = 86_400_000;
+const GEO_URL = "https://raw.githubusercontent.com/OpenDataDE/State-zip-code-GeoJSON/master/ca_california_zip_codes_geo.min.json";
+const POSTS_PER_DAY = 720;
+
+const SJ_ZIPS = new Set([
+  "95002","95008","95013","95032","95035","95037",
+  "95050","95051","95052","95053","95054","95055","95056",
+  "95101","95103","95106","95108","95109","95110","95111",
+  "95112","95113","95115","95116","95117","95118","95119",
+  "95120","95121","95122","95123","95124","95125","95126",
+  "95127","95128","95129","95130","95131","95132","95133",
+  "95134","95135","95136","95138","95139","95140","95141","95148",
+]);
+
+const C = { ink: "#141210", accent: "#b8441f", rule: "#d1c9b6", paper: "#f0ebe0", muted: "#5b5750" };
+
+let map: L.Map | null = null;
+let geojsonLayer: L.GeoJSON | null = null;
+let cachedGeo: GeoJSON.FeatureCollection | null = null;
+let metricsData: MetricsData | null = null;
+
+interface MetricsData {
+  last_post: {
+    id: number; address: string; zip: string; neighborhood?: string;
+    place_type?: string; image_source?: string; post_id?: string; posted_at: string;
+  };
+  total_posted: number; total_lots: number; percent_complete: number;
+  zip_stats?: Record<string, { posted: number; total: number; complete: boolean }>;
+  updated_at: string;
+}
+
+async function fetchMetrics(): Promise<MetricsData | null> {
+  try {
+    const res = await fetch(`${METRICS_URL}?t=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json() as MetricsData;
+  } catch (e) { console.warn("[everylotsj] metrics fetch failed:", e); return null; }
+}
+
+async function loadGeoJSON(): Promise<GeoJSON.FeatureCollection | null> {
+  if (cachedGeo) return cachedGeo;
+  try {
+    const stored = localStorage.getItem("everylotsj_geo");
+    if (stored) {
+      const { ts, data } = JSON.parse(stored);
+      if (Date.now() - ts < GEO_TTL) { cachedGeo = data as GeoJSON.FeatureCollection; return cachedGeo; }
+    }
+  } catch {}
+  try {
+    const res = await fetch(GEO_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const full = await res.json() as GeoJSON.FeatureCollection;
+    const filtered: GeoJSON.FeatureCollection = {
+      ...full,
+      features: full.features.filter((f) => SJ_ZIPS.has((f.properties as Record<string,string>)["ZCTA5CE10"])),
+    };
+    try { localStorage.setItem("everylotsj_geo", JSON.stringify({ ts: Date.now(), data: filtered })); } catch {}
+    cachedGeo = filtered; return filtered;
+  } catch (e) { console.warn("[everylotsj] GeoJSON fetch failed:", e); return null; }
+}
+
+function zipState(zip: string, data: MetricsData): "complete" | "active" | "none" {
+  if (data.zip_stats) {
+    const s = data.zip_stats[zip];
+    if (!s) return "none";
+    if (s.complete) return "complete";
+    if (s.posted > 0) return "active";
+    return "none";
+  }
+  return data.last_post.zip === zip ? "active" : "none";
+}
+
+function zipStyle(zip: string, data: MetricsData): L.PathOptions {
+  const state = zipState(zip, data);
+  return {
+    weight: 0.8, color: C.ink, opacity: 0.5,
+    fillOpacity: state === "complete" ? 0.65 : state === "active" ? 0.55 : 0.15,
+    fillColor: state === "complete" ? C.ink : state === "active" ? C.accent : C.rule,
+  };
+}
+
+function zipTooltip(zip: string, data: MetricsData): string {
+  const s = data.zip_stats?.[zip];
+  const detail = s ? `${s.posted.toLocaleString()} / ${s.total.toLocaleString()} addresses`
+    : zipState(zip, data) === "active" ? "Currently posting here" : "Not started";
+  return `<span style="font-family:ui-monospace,monospace;font-size:11px;"><strong>${zip}</strong><br/>${detail}</span>`;
+}
+
+async function renderMap(data: MetricsData) {
+  const L = (window as Record<string,unknown>)["L"] as typeof import("leaflet");
+  if (!L) return;
+  if (!map) {
+    map = L.map("bot-map", { center: [37.338, -121.886], zoom: 11, zoomControl: true, scrollWheelZoom: false });
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      maxZoom: 14,
+    }).addTo(map);
+  }
+  const geo = await loadGeoJSON();
+  if (!geo) return;
+  if (geojsonLayer) geojsonLayer.remove();
+  geojsonLayer = L.geoJSON(geo as GeoJSON.GeoJsonObject, {
+    style: (feature) => zipStyle((feature!.properties as Record<string,string>)["ZCTA5CE10"], data),
+    onEachFeature: (feature, layer) => {
+      const zip = (feature.properties as Record<string,string>)["ZCTA5CE10"];
+      layer.bindTooltip(zipTooltip(zip, data), { sticky: true });
+      layer.on("mouseover", (e) => (e.target as L.Path).setStyle({ weight: 2, opacity: 1 }));
+      layer.on("mouseout",  (e) => (e.target as L.Path).setStyle(zipStyle(zip, data)));
+    },
+  }).addTo(map);
+}
+
+function setText(id: string, val: string) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+function calcETA(remaining: number): string {
+  const eta = new Date(Date.now() + (remaining / POSTS_PER_DAY) * 86_400_000);
+  return eta.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+function relTime(iso: string): string {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function renderStats(data: MetricsData) {
+  const remaining = data.total_lots - data.total_posted;
+  const pct = ((data.total_posted / data.total_lots) * 100).toFixed(2);
+  const bar = document.getElementById("progress-bar");
+  if (bar) bar.style.width = `${pct}%`;
+  setText("stat-posted", data.total_posted.toLocaleString());
+  setText("stat-pct", `${pct}% complete`);
+  setText("stat-address", data.last_post.address);
+  setText("stat-neighborhood", data.last_post.neighborhood ?? "—");
+  setText("stat-remaining", remaining.toLocaleString());
+  setText("stat-eta", calcETA(remaining));
+  setText("stat-meta", [data.last_post.place_type, `ZIP ${data.last_post.zip}`, relTime(data.last_post.posted_at)].filter(Boolean).join(" · "));
+  setText("stat-synced", `Bot data last updated ${relTime(data.updated_at)} · refreshes every 60 s`);
+  const mastoLink = document.getElementById("stat-mastodon-link") as HTMLAnchorElement | null;
+  if (mastoLink && data.last_post.post_id) {
+    mastoLink.href = `https://mastodon.social/@everylotsj/${data.last_post.post_id}`;
+    mastoLink.classList.remove("hidden");
+  }
+}
+
+async function tick() {
+  const data = await fetchMetrics();
+  const loading = document.getElementById("loading-state");
+  const main = document.getElementById("main-stats");
+  const err = document.getElementById("error-state");
+  if (!data) { loading?.classList.add("hidden"); main?.classList.add("hidden"); err?.classList.remove("hidden"); return; }
+  metricsData = data;
+  loading?.classList.add("hidden"); err?.classList.add("hidden"); main?.classList.remove("hidden");
+  renderStats(data); await renderMap(data);
+}
+
+function loadLeaflet(): Promise<void> {
+  return new Promise((resolve) => {
+    if ((window as Record<string,unknown>)["L"]) { resolve(); return; }
+    const s = document.createElement("script");
+    s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    s.crossOrigin = "";
+    s.onload = () => resolve();
+    s.onerror = () => resolve();
+    document.head.appendChild(s);
+  });
+}
+
+(async () => {
+  const data = await fetchMetrics();
+  const loading = document.getElementById("loading-state");
+  const main = document.getElementById("main-stats");
+  const err = document.getElementById("error-state");
+  if (!data) { loading?.classList.add("hidden"); err?.classList.remove("hidden"); }
+  else { metricsData = data; loading?.classList.add("hidden"); err?.classList.add("hidden"); main?.classList.remove("hidden"); renderStats(data); }
+  await loadLeaflet();
+  if (data) await renderMap(data);
+  setInterval(tick, POLL_MS);
+})();
+</script>
+
+<style>
+  .leaflet-container { background: var(--color-paper); font-family: var(--font-mono); }
+  .leaflet-tooltip { background: var(--color-ink); color: var(--color-paper); border: none; border-radius: 0; box-shadow: none; padding: 4px 8px; }
+  .leaflet-tooltip-top::before { border-top-color: var(--color-ink); }
+</style>
