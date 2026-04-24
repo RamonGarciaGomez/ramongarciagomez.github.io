@@ -74,6 +74,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             <p class="eyebrow mb-3">Last posted</p>
             <p id="stat-address" class="font-serif text-xl md:text-2xl leading-snug mb-2">—</p>
             <p id="stat-meta" class="mono text-xs text-[color:var(--color-muted)] uppercase tracking-widest">—</p>
+            <a id="stat-mastodon-link" href="#" target="_blank" rel="noopener noreferrer" class="mono text-xs text-[color:var(--color-muted)] hover:text-[color:var(--color-accent)] transition-colors hidden">→ View on Mastodon</a>
           </div>
           <div class="grid grid-cols-2 gap-6">
             <div>
@@ -183,6 +184,7 @@ interface MetricsData {
     neighborhood?: string;
     place_type?: string;
     image_source?: string;
+    post_id?: string;
     posted_at: string;
   };
   total_posted: number;
@@ -367,6 +369,12 @@ function renderStats(data: MetricsData) {
   setText("stat-synced",
     `Bot data last updated ${relTime(data.updated_at)} · refreshes every 60 s`
   );
+
+  const mastoLink = document.getElementById("stat-mastodon-link") as HTMLAnchorElement | null;
+  if (mastoLink && data.last_post.post_id) {
+    mastoLink.href = `https://mastodon.social/@everylotsj/${data.last_post.post_id}`;
+    mastoLink.classList.remove("hidden");
+  }
 }
 
 // ─── Main loop ────────────────────────────────────────────────────────────────
