@@ -84,6 +84,121 @@ function relativeTime(iso: string): string {
         </div>
       </section>
 
+      <!-- ░░ MONTHLY MILES ░░ -->
+      {strava.monthly.length > 0 && (() => {
+        const thisYear  = new Date().getUTCFullYear();
+        const lastYear  = thisYear - 1;
+        const data      = strava.monthly;
+        const hasLastYr = data.some(d => d.mi_last_year > 0);
+
+        // SVG chart constants
+        const W = 800, H = 180;
+        const MT = 16, MR = 16, MB = 40, ML = 16;
+        const innerW = W - ML - MR;
+        const innerH = H - MT - MB;
+
+        const maxMi = Math.max(...data.flatMap(d => [d.mi_this_year, d.mi_last_year]), 1);
+        const maxScale = Math.ceil(maxMi / 5) * 5;  // round up to nearest 5
+
+        const nGroups  = data.length;
+        const groupW   = innerW / nGroups;
+        const barW     = Math.max(1, Math.min(28, (groupW - 6) / (hasLastYr ? 2 : 1)));
+        const barGap   = 3;
+
+        function bH(mi: number) { return (mi / maxScale) * innerH; }
+        function bY(mi: number) { return MT + innerH - bH(mi); }
+
+        return (
+          <section>
+            <div class="flex items-baseline justify-between mb-8 flex-wrap gap-3">
+              <p class="eyebrow">Monthly miles</p>
+              <div class="flex items-center gap-4 mono text-[0.65rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
+                <span class="flex items-center gap-1.5">
+                  <span class="inline-block w-3 h-3 bg-[color:var(--color-ink)]"></span>{thisYear}
+                </span>
+                {hasLastYr && (
+                  <span class="flex items-center gap-1.5">
+                    <span class="inline-block w-3 h-3 bg-[color:var(--color-rule)]"></span>{lastYear}
+                  </span>
+                )}
+              </div>
+            </div>
+            <svg
+              viewBox={`0 0 ${W} ${H}`}
+              class="w-full border-b border-[color:var(--color-rule)]"
+              aria-label="Monthly miles chart"
+              role="img"
+            >
+              {/* Y-axis max label */}
+              <text
+                x={ML}
+                y={MT - 4}
+                font-family="ui-monospace,monospace"
+                font-size="10"
+                fill="var(--color-muted)"
+                text-anchor="start"
+              >{maxScale} mi</text>
+
+              {/* Gridline at top */}
+              <line
+                x1={ML} y1={MT}
+                x2={W - MR} y2={MT}
+                stroke="var(--color-rule)"
+                stroke-width="0.5"
+              />
+
+              {/* Bars */}
+              {data.map((d, i) => {
+                const gx = ML + i * groupW;
+                const cx = gx + groupW / 2;
+
+                const thisBarW  = barW;
+                const lastBarW  = hasLastYr ? barW : 0;
+                const totalBarsW = thisBarW + (hasLastYr ? lastBarW + barGap : 0);
+                const barsLeft  = cx - totalBarsW / 2;
+
+                const thisH = bH(d.mi_this_year);
+                const lastH = hasLastYr ? bH(d.mi_last_year) : 0;
+
+                return (
+                  <>
+                    {/* Last year bar (behind) */}
+                    {hasLastYr && lastH > 0 && (
+                      <rect
+                        x={barsLeft + thisBarW + barGap}
+                        y={bY(d.mi_last_year)}
+                        width={lastBarW}
+                        height={lastH}
+                        fill="var(--color-rule)"
+                      />
+                    )}
+                    {/* This year bar */}
+                    {thisH > 0 && (
+                      <rect
+                        x={barsLeft}
+                        y={bY(d.mi_this_year)}
+                        width={thisBarW}
+                        height={thisH}
+                        fill="var(--color-ink)"
+                      />
+                    )}
+                    {/* Month label */}
+                    <text
+                      x={cx}
+                      y={H - 8}
+                      font-family="ui-monospace,monospace"
+                      font-size="10"
+                      fill="var(--color-muted)"
+                      text-anchor="middle"
+                    >{d.month}</text>
+                  </>
+                );
+              })}
+            </svg>
+          </section>
+        );
+      })()}
+
       <!-- ░░ LATEST ACTIVITY ░░ -->
       {strava.latest && (
         <section>

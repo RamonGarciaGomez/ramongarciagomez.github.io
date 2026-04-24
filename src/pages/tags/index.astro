@@ -1,0 +1,72 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+const posts    = await getCollection("blog",     ({ data }) => !data.draft);
+const projects = await getCollection("projects", ({ data }) => !data.draft);
+
+// Build tag → entries map
+const tagMap = new Map<string, { title: string; href: string; section: string }[]>();
+
+for (const p of posts) {
+  for (const tag of p.data.tags ?? []) {
+    if (!tagMap.has(tag)) tagMap.set(tag, []);
+    tagMap.get(tag)!.push({ title: p.data.title, href: `/blog/${p.id}`, section: "Writing" });
+  }
+}
+for (const p of projects) {
+  for (const tag of p.data.tags ?? []) {
+    if (!tagMap.has(tag)) tagMap.set(tag, []);
+    tagMap.get(tag)!.push({ title: p.data.title, href: `/projects/${p.id}`, section: "Projects" });
+  }
+}
+
+// Sort tags by entry count desc, then alpha
+const tags = [...tagMap.entries()]
+  .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+---
+
+<BaseLayout title="Tags" description="All tags across writing and projects.">
+
+  <header class="pt-4 pb-12 md:pb-16">
+    <p class="eyebrow mb-5">Tags</p>
+    <h1 class="display text-5xl md:text-7xl mb-6">Tags</h1>
+    <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
+      {tags.length} tags across {posts.length + projects.length} entries
+    </p>
+  </header>
+
+  <div class="border-t-2 border-[color:var(--color-ink)]"></div>
+  <div class="border-t border-[color:var(--color-ink)] mt-[2px]"></div>
+
+  <div class="pt-10 space-y-12">
+    {tags.map(([tag, entries]) => (
+      <section>
+        <div class="flex items-baseline gap-4 mb-4 border-t border-[color:var(--color-rule)] pt-6">
+          <h2 class="display text-2xl md:text-3xl">#{tag}</h2>
+          <span class="mono text-xs text-[color:var(--color-muted)] uppercase tracking-widest">
+            {entries.length} {entries.length === 1 ? "entry" : "entries"}
+          </span>
+        </div>
+        <ul class="space-y-1.5">
+          {entries.map((e) => (
+            <li>
+              <a
+                href={e.href}
+                class="group flex items-baseline gap-3 hover:text-[color:var(--color-accent)] transition-colors"
+              >
+                <span class="mono text-[0.65rem] uppercase tracking-widest text-[color:var(--color-muted)] shrink-0 group-hover:text-[color:var(--color-accent)]">
+                  {e.section}
+                </span>
+                <span class="font-serif text-lg group-hover:underline decoration-1 underline-offset-[5px] decoration-[color:var(--color-accent)]">
+                  {e.title}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
+
+</BaseLayout>

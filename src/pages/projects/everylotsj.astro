@@ -142,6 +142,12 @@ const dateStr = new Date("2026-04-23")
         </p>
       </section>
 
+      <!-- Recent posts carousel -->
+      <section id="recent-section" class="hidden">
+        <p class="eyebrow mb-4">Recent posts</p>
+        <ul id="recent-list" class="border-t border-[color:var(--color-rule)]"></ul>
+      </section>
+
       <p id="stat-synced" class="mono text-xs text-[color:var(--color-muted)] pb-4">—</p>
 
     </div><!-- /main-stats -->
@@ -185,13 +191,26 @@ let geojsonLayer: L.GeoJSON | null = null;
 let cachedGeo: GeoJSON.FeatureCollection | null = null;
 let metricsData: MetricsData | null = null;
 
+interface RecentPost {
+  id: number;
+  address: string;
+  zip?: string | null;
+  neighborhood?: string | null;
+  place_type?: string | null;
+  post_id?: string | null;
+  posted_at: string;
+  image_source?: string | null;
+}
+
 interface MetricsData {
   last_post: {
-    id: number; address: string; zip: string; neighborhood?: string;
-    place_type?: string; image_source?: string; post_id?: string; posted_at: string;
+    id: number; address: string; zip?: string | null; neighborhood?: string | null;
+    place_type?: string | null; image_source?: string | null; post_id?: string | null; posted_at: string;
   };
   total_posted: number; total_lots: number; percent_complete: number;
-  zip_stats?: Record<string, { posted: number; total: number; complete: boolean }>;
+  // complete is never set by the bot — always check with posted/total ratio instead
+  zip_stats?: Record<string, { posted: number; total: number; complete?: boolean }>;
+  recent_posts?: RecentPost[];
   updated_at: string;
 }
 
@@ -216,6 +235,11 @@ async function loadGeoJSON(): Promise<GeoJSON.FeatureCollection | null> {
     const res = await fetch(GEO_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const full = await res.json() as GeoJSON.FeatureCollection;
+    // Validate structure before accessing .features
+    if (!full?.features || !Array.isArray(full.features)) {
+      console.warn("[everylotsj] GeoJSON missing features array");
+      return null;
+    }
     const filtered: GeoJSON.FeatureCollection = {
       ...full,
       features: full.features.filter((f) => SJ_ZIPS.has((f.properties as Record<string,string>)["ZCTA5CE10"])),
@@ -223,17 +247,6 @@ async function loadGeoJSON(): Promise<GeoJSON.FeatureCollection | null> {
     try { localStorage.setItem("everylotsj_geo", JSON.stringify({ ts: Date.now(), data: filtered })); } catch {}
     cachedGeo = filtered; return filtered;
   } catch (e) { console.warn("[everylotsj] GeoJSON fetch failed:", e); return null; }
-}
-
-function zipState(zip: string, data: MetricsData): "complete" | "active" | "none" {
-  if (data.zip_stats) {
-    const s = data.zip_stats[zip];
-    if (!s) return "none";
-    if (s.complete) return "complete";
-    if (s.posted > 0) return "active";
-    return "none";
-  }
-  return data.last_post.zip === zip ? "active" : "none";
 }
 
 function zipCompletion(zip: string, data: MetricsData): number {
@@ -261,13 +274,19 @@ function zipStyle(zip: string, data: MetricsData): L.PathOptions {
   };
 }
 
+function escHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c] ?? c)
+  );
+}
+
 function zipTooltip(zip: string, data: MetricsData): string {
   const s = data.zip_stats?.[zip];
   const pct = zipCompletion(zip, data);
   const detail = s
     ? `${s.posted.toLocaleString()} / ${s.total.toLocaleString()} · ${(pct * 100).toFixed(1)}%`
     : "Not started";
-  return `<span style="font-family:ui-monospace,monospace;font-size:11px;"><strong>${zip}</strong><br/>${detail}</span>`;
+  return `<span style="font-family:ui-monospace,monospace;font-size:11px;"><strong>${escHtml(zip)}</strong><br/>${escHtml(detail)}</span>`;
 }
 
 async function renderMap(data: MetricsData) {
@@ -330,15 +349,53 @@ function renderStats(data: MetricsData) {
   }
 }
 
+function renderCarousel(data: MetricsData) {
+  const list = document.getElementById("recent-list");
+  if (!list || !data.recent_posts?.length) return;
+  const PLACE_LABELS: Record<string, string> = {
+    SF:"Single Family", MF:"Multi-Family", BU:"Commercial",
+    MH:"Mobile Home", CO:"Condo", TR:"Transit",
+  };
+  list.innerHTML = data.recent_posts.map((p) => {
+    const label = p.place_type ? (PLACE_LABELS[p.place_type] ?? p.place_type) : "";
+    const hood  = p.neighborhood ?? (p.zip ? `ZIP ${p.zip}` : "");
+    const meta  = [label, hood, relTime(p.posted_at)].filter(Boolean).join(" · ");
+    const href  = p.post_id
+      ? `https://mastodon.social/@everylotsj/${escHtml(p.post_id)}`
+      : `https://mastodon.social/@everylotsj`;
+    return `<li class="border-b border-[color:var(--color-rule)]">
+      <a href="${href}" target="_blank" rel="noopener noreferrer"
+         class="group flex justify-between items-start gap-4 py-3 hover:text-[color:var(--color-accent)] transition-colors">
+        <div class="min-w-0">
+          <p class="font-serif text-base leading-snug truncate">${escHtml(p.address)}</p>
+          <p class="mono text-[0.65rem] uppercase tracking-widest text-[color:var(--color-muted)] mt-0.5">${escHtml(meta)}</p>
+        </div>
+        <span class="mono text-[0.65rem] uppercase tracking-widest text-[color:var(--color-muted)] shrink-0 group-hover:text-[color:var(--color-accent)] transition-colors">→</span>
+      </a>
+    </li>`;
+  }).join("");
+  document.getElementById("recent-section")?.classList.remove("hidden");
+}
+
+let _ticking = false;
+
 async function tick() {
-  const data = await fetchMetrics();
-  const loading = document.getElementById("loading-state");
-  const main = document.getElementById("main-stats");
-  const err = document.getElementById("error-state");
-  if (!data) { loading?.classList.add("hidden"); main?.classList.add("hidden"); err?.classList.remove("hidden"); return; }
-  metricsData = data;
-  loading?.classList.add("hidden"); err?.classList.add("hidden"); main?.classList.remove("hidden");
-  renderStats(data); await renderMap(data);
+  if (_ticking) return;  // prevent overlapping fetches
+  _ticking = true;
+  try {
+    const data = await fetchMetrics();
+    const loading = document.getElementById("loading-state");
+    const main = document.getElementById("main-stats");
+    const err = document.getElementById("error-state");
+    if (!data) { loading?.classList.add("hidden"); main?.classList.add("hidden"); err?.classList.remove("hidden"); return; }
+    metricsData = data;
+    loading?.classList.add("hidden"); err?.classList.add("hidden"); main?.classList.remove("hidden");
+    renderStats(data);
+    renderCarousel(data);
+    await renderMap(data);
+  } finally {
+    _ticking = false;
+  }
 }
 
 function loadLeaflet(): Promise<void> {
@@ -359,7 +416,7 @@ function loadLeaflet(): Promise<void> {
   const main = document.getElementById("main-stats");
   const err = document.getElementById("error-state");
   if (!data) { loading?.classList.add("hidden"); err?.classList.remove("hidden"); }
-  else { metricsData = data; loading?.classList.add("hidden"); err?.classList.add("hidden"); main?.classList.remove("hidden"); renderStats(data); }
+  else { metricsData = data; loading?.classList.add("hidden"); err?.classList.add("hidden"); main?.classList.remove("hidden"); renderStats(data); renderCarousel(data); }
   await loadLeaflet();
   if (data) await renderMap(data);
   setInterval(tick, POLL_MS);

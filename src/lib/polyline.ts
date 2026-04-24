@@ -3,6 +3,10 @@
  * Self-contained — no deps.
  */
 
+// Memoize polylineToSvgPath since the same polyline (recent activities list)
+// may be rendered multiple times per build with identical dimensions.
+const _svgPathCache = new Map<string, string | null>();
+
 /** Decode a Google encoded polyline string → [lat, lng][] */
 export function decodePolyline(str: string): [number, number][] {
   const coords: [number, number][] = [];
@@ -49,6 +53,8 @@ export function polylineToSvgPath(
   padding = 2
 ): string | null {
   if (!encoded) return null;
+  const cacheKey = `${encoded}:${width}x${height}p${padding}`;
+  if (_svgPathCache.has(cacheKey)) return _svgPathCache.get(cacheKey)!;
   const coords = decodePolyline(encoded);
   if (coords.length < 2) return null;
 
@@ -87,5 +93,7 @@ export function polylineToSvgPath(
     ([x, y]) =>
       `${(x * scale + offsetX).toFixed(2)},${(y * scale + offsetY).toFixed(2)}`
   );
-  return "M" + points.join(" L");
+  const result = "M" + points.join(" L");
+  _svgPathCache.set(cacheKey, result);
+  return result;
 }

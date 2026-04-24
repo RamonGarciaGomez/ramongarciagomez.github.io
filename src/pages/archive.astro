@@ -1,0 +1,65 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getNumberedEntries } from "../lib/catalog";
+
+const posts    = await getNumberedEntries("post");
+const projects = await getNumberedEntries("project");
+
+// Merge and sort newest-first
+const all = [
+  ...posts.map((e) => ({ ...e, section: "Writing" as const, href: `/blog/${e.id}` })),
+  ...projects.map((e) => ({ ...e, section: "Projects" as const, href: `/projects/${e.id}` })),
+].sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+// Group by year
+const byYear = new Map<number, typeof all>();
+for (const entry of all) {
+  const year = entry.data.date.getFullYear();
+  if (!byYear.has(year)) byYear.set(year, []);
+  byYear.get(year)!.push(entry);
+}
+const years = [...byYear.keys()].sort((a, b) => b - a);
+---
+
+<BaseLayout title="Archive" description="Every post and project, in order.">
+
+  <header class="pt-4 pb-12 md:pb-16">
+    <p class="eyebrow mb-5">Archive</p>
+    <h1 class="display text-5xl md:text-7xl mb-6">The Record</h1>
+    <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">
+      {all.length} entries — writing + projects
+    </p>
+  </header>
+
+  <div class="border-t-2 border-[color:var(--color-ink)]"></div>
+  <div class="border-t border-[color:var(--color-ink)] mt-[2px]"></div>
+
+  <div class="pt-10 space-y-16">
+    {years.map((year) => (
+      <section>
+        <p class="eyebrow mb-6">{year}</p>
+        <ul class="border-t border-[color:var(--color-rule)]">
+          {byYear.get(year)!.map((entry) => (
+            <li class="border-b border-[color:var(--color-rule)]">
+              <a
+                href={entry.href}
+                class="group grid grid-cols-[auto_1fr_auto] gap-x-4 md:gap-x-6 py-4 items-baseline"
+              >
+                <span class="mono text-xs text-[color:var(--color-muted)] group-hover:text-[color:var(--color-accent)] transition-colors shrink-0">
+                  {entry.catalog}
+                </span>
+                <span class="font-serif text-lg md:text-xl leading-tight group-hover:underline decoration-1 underline-offset-[5px] decoration-[color:var(--color-accent)]">
+                  {entry.data.title}
+                </span>
+                <span class="mono text-xs text-[color:var(--color-muted)] tracking-widest shrink-0 text-right">
+                  {entry.data.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
+
+</BaseLayout>

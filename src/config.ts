@@ -15,9 +15,4 @@ export const NOW = {
     author: "Jonathan Eig",
     url: "https://www.goodreads.com/book/show/57693425",
   },
-  // Strava will be wired up live later — set a fallback here for now
-  strava: {
-    weeklyKm: null as number | null,   // e.g. 42
-    sport: null as string | null,       // e.g. "running"
-  },
 };
