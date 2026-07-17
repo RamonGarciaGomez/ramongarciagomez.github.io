@@ -1,0 +1,27 @@
+---
+title: "Can I Park Here?"
+description: "Every San Francisco parking ticket, mapped by block, hour, and weekday — 12 million citations turned into a live enforcement map, plus computed stories from the last 30 days."
+date: 2026-07-16
+status: active
+tags: ["python", "open data", "maps", "san francisco"]
+repo: "https://github.com/RamonGarciaGomez/sf-parking-ticket-clock"
+---
+
+San Francisco writes about 4,500 parking tickets on a normal weekday, and almost
+none of them are surprises. Street-cleaning crews follow published routes. Meter
+enforcement switches on at 9 am sharp. Residential permit officers chalk tires
+and come back exactly two hours later.
+
+[The map](/projects/sf-parking) turns 13 years of SFMTA citation data — about 12
+million geocoded tickets — into the question you actually have: *how ticketed is
+this block, at this hour, on this day?* Alongside it, a set of computed
+vignettes from the last 30 days of citations: the most-ticketed block in the
+city, the biggest single-hour enforcement burst, and the one car that collected
+27 tickets in a month.
+
+The technically interesting part is the geocoder: the city stopped publishing
+coordinates for citations in 2020, so the pipeline learns locations from the
+historical record itself — 854,000 distinct address strings mapped from 11.9M
+pre-2020 tickets, backstopped by the city's address registry and intersection
+inference. 98.7% of brand-new citations resolve deterministically, in
+microseconds, with no external geocoding service.

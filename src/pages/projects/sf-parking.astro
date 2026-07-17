@@ -1,0 +1,302 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCatalogId } from "../../lib/catalog";
+
+const catalog = await getCatalogId("project", "sf-parking");
+const dateStr = new Date("2026-07-16")
+  .toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit" })
+  .toUpperCase();
+---
+
+<BaseLayout
+  title="Can I Park Here?"
+  description="Every San Francisco parking ticket, mapped by block, hour, and weekday — plus computed stories from the last 30 days of citations."
+>
+  <link slot="head" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+  <!-- ░░ PROJECT HEADER ░░ -->
+  <div class="pt-2 pb-6 mono text-xs uppercase tracking-widest text-[color:var(--color-muted)] flex flex-wrap gap-x-3 gap-y-1">
+    <a href="/projects" class="hover:text-[color:var(--color-accent)] transition-colors">Projects</a>
+    <span aria-hidden="true">·</span>
+    <span>{catalog}</span>
+    <span aria-hidden="true">·</span>
+    <span>{dateStr}</span>
+    <span aria-hidden="true">·</span>
+    <span class="text-[color:var(--color-accent)]">[active]</span>
+  </div>
+
+  <h1 class="display text-4xl md:text-6xl mb-5">Can I Park Here?</h1>
+  <p class="font-serif italic text-xl md:text-2xl text-[color:var(--color-muted)] max-w-2xl leading-snug mb-6">
+    Every San Francisco parking ticket, mapped by block, hour, and weekday.
+  </p>
+
+  <ul class="flex flex-wrap gap-x-3 gap-y-1 mono text-[0.7rem] uppercase tracking-widest text-[color:var(--color-muted)] mb-8">
+    {["python", "open data", "maps", "san francisco"].map((t) => <li>#{t}</li>)}
+  </ul>
+
+  <p class="mono text-xs uppercase tracking-widest flex gap-5 mb-10">
+    <a href="https://github.com/RamonGarciaGomez/sf-parking-ticket-clock" target="_blank" rel="noopener noreferrer"
+       class="text-[color:var(--color-accent)] hover:underline underline-offset-4">→ Repository</a>
+  </p>
+
+  <div class="border-t border-[color:var(--color-rule)] mb-10"></div>
+
+  <!-- ░░ WRITTEN DESCRIPTION ░░ -->
+  <article class="prose-post mx-0 mb-16">
+    <p>
+      San Francisco writes about 4,500 parking tickets on a normal weekday, and almost none of
+      them are surprises. Street-cleaning crews follow published routes. Meter enforcement
+      switches on at 9 am. Residential permit officers chalk tires and come back two hours
+      later. This map turns 13 years of SFMTA citation data — about 12 million geocoded
+      tickets — into the question you actually have: <em>how ticketed is this block, at this
+      hour, on this day?</em>
+    </p>
+    <p>
+      Pick an hour and a weekday below, or hit <span class="mono text-sm">NOW</span>. Darker,
+      larger dots mean more tickets historically written on that block at that time. Click any
+      block for its ticket profile — including how long it's been since its last citation,
+      updated from data that runs about a week behind real time.
+    </p>
+  </article>
+
+  <!-- ░░ DOUBLE RULE ░░ -->
+  <div class="border-t-2 border-[color:var(--color-ink)]"></div>
+  <div class="border-t border-[color:var(--color-ink)] mt-[2px] mb-10"></div>
+
+  <div id="loading-state" class="py-20 text-center">
+    <p class="mono text-xs uppercase tracking-widest text-[color:var(--color-muted)]">Loading citation data…</p>
+  </div>
+
+  <div id="dashboard" class="hidden space-y-16">
+
+    <!-- ░░ VIGNETTES ░░ -->
+    <section>
+      <p class="eyebrow mb-2">This month in tickets</p>
+      <p class="mono text-[0.65rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)] mb-8">
+        Computed from the last 30 days of citations · no plates, no people
+      </p>
+      <div id="vignettes" class="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-12"></div>
+    </section>
+
+    <!-- ░░ RISK MAP ░░ -->
+    <section>
+      <p class="eyebrow mb-8">The map</p>
+
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-3 mb-4">
+        <div id="day-chips" class="flex gap-1 mono text-[0.7rem] uppercase tracking-widest"></div>
+        <button id="now-btn"
+          class="mono text-[0.7rem] uppercase tracking-widest px-3 py-1 border border-[color:var(--color-ink)] hover:bg-[color:var(--color-ink)] hover:text-[color:var(--color-paper)] transition-colors">
+          Now
+        </button>
+      </div>
+      <div class="flex items-center gap-4 mb-6">
+        <input id="hour-slider" type="range" min="0" max="23" value="9"
+          class="w-full max-w-md accent-[color:var(--color-accent)]" />
+        <span id="slot-label" class="mono text-xs uppercase tracking-widest whitespace-nowrap">Mon · 9 am</span>
+      </div>
+
+      <div id="map" class="h-[520px] border border-[color:var(--color-rule)]"></div>
+      <p class="mono text-[0.65rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)] mt-3">
+        Dot size &amp; color: tickets written on that block at the selected hour, 2019 baseline year
+      </p>
+    </section>
+
+    <!-- ░░ METHOD ░░ -->
+    <section class="border-t border-[color:var(--color-rule)] pt-8">
+      <p class="eyebrow mb-4">Honesty note</p>
+      <p class="font-serif max-w-2xl leading-relaxed text-[color:var(--color-muted)]">
+        This shows historical ticket <em>activity</em>, not your probability of getting a ticket —
+        nobody knows how many un-ticketed cars there were. The intensity surface uses 2019, the
+        last year the city published coordinates; enforcement geography is structural (sweeping
+        routes, meter hours) and changes slowly. Freshness stats come from current data, located
+        with a
+        <a href="https://github.com/RamonGarciaGomez/sf-parking-ticket-clock" class="underline underline-offset-4 hover:text-[color:var(--color-accent)]">
+        deterministic geocoder</a> built from the historical record itself (98.7% hit rate).
+        Source: SFMTA Parking Citations &amp; Fines, DataSF.
+      </p>
+      <p id="built-stamp" class="mono text-[0.65rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)] mt-4"></p>
+    </section>
+  </div>
+
+<script>
+  const C = { ink: "#141210", accent: "#b8441f", rule: "#d1c9b6", paper: "#f0ebe0", muted: "#5b5750" };
+  const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const VIOL: Record<string, string> = {
+    "STR CLEAN": "Street cleaning", "MTR OUT DT": "Expired meter", "METER DTN": "Expired meter",
+    "RES/OT": "Residential permit overtime", "FAIL DISPL": "No payment displayed",
+    "DBL PARK": "Double parking", "YEL ZONE": "Yellow zone", "WHITE ZONE": "White zone",
+    "DRIVEWAY": "Blocking a driveway", "PRK PROHIB": "Prohibited parking",
+    "PK PHB OTD": "Prohibited parking", "PRK GRADE": "Unsafe parking on a grade",
+    "PK STANDS": "Parking stand", "REG TABS": "Expired registration", "NO PLATES": "Missing plates",
+  };
+
+  interface Block {
+    id: string; name: string; lat: number; lon: number;
+    y19: number; hist: string; recent: number; last: string | null; viol: string | null;
+  }
+
+  let blocks: Block[] = [];
+  let markers: any[] = [];
+  let map: any = null;
+  let day = 0, hour = 9;
+
+  const $ = (id: string) => document.getElementById(id)!;
+
+  function fmtMoney(n: number) { return "$" + n.toLocaleString(); }
+
+  function daysAgo(iso: string | null): string {
+    if (!iso) return "60+ days ago";
+    const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+    return d <= 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`;
+  }
+
+  function slotValue(b: Block): number {
+    return parseInt(b.hist[day * 24 + hour], 36);
+  }
+
+  // sequential ramp on the site palette: sand -> terracotta -> ink
+  function ramp(t: number): string {
+    const stops = [[209, 201, 182], [184, 68, 31], [20, 18, 16]];
+    const x = t < 0.5 ? 0 : 1, f = t < 0.5 ? t * 2 : (t - 0.5) * 2;
+    const a = stops[x], b = stops[x + 1];
+    return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * f)).join(",")})`;
+  }
+
+  function slotLabel() {
+    const h12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${DAYS[day]} · ${h12} ${hour < 12 ? "am" : "pm"}`;
+  }
+
+  function restyle() {
+    $("slot-label").textContent = slotLabel();
+    document.querySelectorAll("#day-chips button").forEach((b, i) =>
+      b.setAttribute("aria-pressed", String(i === day)));
+    for (let i = 0; i < blocks.length; i++) {
+      const v = slotValue(blocks[i]);
+      const m = markers[i];
+      if (v === 0) { m.setStyle({ opacity: 0, fillOpacity: 0 }); m._inert = true; continue; }
+      const t = Math.min(v / 20, 1);
+      m._inert = false;
+      m.setRadius(2 + t * 8);
+      m.setStyle({ opacity: 0.7, fillOpacity: 0.75, color: ramp(t), fillColor: ramp(t) });
+    }
+  }
+
+  function popupHtml(b: Block): string {
+    const v = slotValue(b);
+    return `<div style="font-family:var(--font-serif);min-width:210px">
+      <p style="font-size:1.05rem;line-height:1.2;margin-bottom:6px">${b.name}</p>
+      <p style="font-family:var(--font-mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.12em;color:${C.muted}">
+        ${slotLabel()}: ${v}${v >= 35 ? "+" : ""} tickets in 2019<br>
+        2019 total: ${b.y19.toLocaleString()}<br>
+        last 60 days: ${b.recent} · last ticket ${daysAgo(b.last)}<br>
+        usually: ${b.viol ? (VIOL[b.viol] ?? b.viol.toLowerCase()) : "—"}
+      </p></div>`;
+  }
+
+  function initMap() {
+    // @ts-ignore
+    const L = (window as any).L;
+    map = L.map("map", { preferCanvas: true, scrollWheelZoom: false })
+      .setView([37.7685, -122.4405], 13);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      maxZoom: 18,
+    }).addTo(map);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
+      maxZoom: 18, pane: "shadowPane",
+    }).addTo(map);
+
+    for (const b of blocks) {
+      const m = L.circleMarker([b.lat, b.lon], { radius: 3, weight: 1 });
+      m.bindPopup(() => popupHtml(b));
+      m.addTo(map);
+      markers.push(m);
+    }
+  }
+
+  function renderVignettes(vs: any[]) {
+    $("vignettes").innerHTML = vs.map((v) => {
+      const money = v.kind === "priciest" || v.kind === "citywide";
+      const val = (money ? fmtMoney(v.value) : v.value.toLocaleString()) + (v.suffix ?? "");
+      return `<div>
+        <p class="stat-num text-5xl md:text-6xl mb-3">${val}</p>
+        <p class="font-serif text-lg leading-snug mb-1">${v.block}</p>
+        <p class="mono text-[0.65rem] uppercase tracking-[0.15em] text-[color:var(--color-muted)] leading-relaxed">${v.text}</p>
+      </div>`;
+    }).join("");
+  }
+
+  function buildControls() {
+    $("day-chips").innerHTML = DAYS.map((d, i) =>
+      `<button data-day="${i}" class="px-2 py-1 border border-[color:var(--color-rule)]
+        aria-pressed:border-[color:var(--color-ink)] aria-pressed:bg-[color:var(--color-ink)] aria-pressed:text-[color:var(--color-paper)]
+        hover:border-[color:var(--color-ink)] transition-colors">${d}</button>`).join("");
+    $("day-chips").addEventListener("click", (e) => {
+      const b = (e.target as HTMLElement).closest("button");
+      if (!b) return;
+      day = parseInt(b.dataset.day!, 10);
+      restyle();
+    });
+    ($("hour-slider") as HTMLInputElement).addEventListener("input", (e) => {
+      hour = parseInt((e.target as HTMLInputElement).value, 10);
+      restyle();
+    });
+    $("now-btn").addEventListener("click", setNow);
+  }
+
+  function setNow() {
+    const sf = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" }));
+    day = (sf.getDay() + 6) % 7;
+    hour = sf.getHours();
+    ($("hour-slider") as HTMLInputElement).value = String(hour);
+    restyle();
+  }
+
+  async function boot() {
+    const leaflet = document.createElement("script");
+    leaflet.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    leaflet.crossOrigin = "";
+    const ready = new Promise((res) => (leaflet.onload = res));
+    document.head.appendChild(leaflet);
+
+    const [bRes, vRes] = await Promise.all([
+      fetch("/data/parking/blocks.json"),
+      fetch("/data/parking/vignettes.json"),
+    ]);
+    const bData = await bRes.json();
+    const vData = await vRes.json();
+    blocks = bData.blocks.slice(0, 8000);
+    await ready;
+
+    $("loading-state").classList.add("hidden");
+    $("dashboard").classList.remove("hidden");
+    renderVignettes(vData.vignettes);
+    buildControls();
+    initMap();
+    setNow();
+    $("built-stamp").textContent =
+      `Data built ${bData.meta.built.replace("T", " · ")} — ${bData.meta.blocks.toLocaleString()} blocks`;
+  }
+
+  boot();
+</script>
+
+<style>
+  /* aria-pressed styling for day chips (Tailwind can't target it inline) */
+  #day-chips button[aria-pressed="true"] {
+    border-color: var(--color-ink);
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .leaflet-popup-content-wrapper {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border: 1px solid var(--color-rule);
+    border-radius: 0;
+    box-shadow: 3px 3px 0 rgb(20 18 16 / 0.12);
+  }
+  .leaflet-popup-tip { background: var(--color-paper); }
+  .leaflet-container { font-family: var(--font-sans); }
+</style>
+</BaseLayout>
