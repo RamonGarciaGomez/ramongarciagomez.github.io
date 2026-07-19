@@ -78,6 +78,30 @@ const dateStr = new Date("2026-07-16")
       <div id="vignettes" class="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-12"></div>
     </section>
 
+    <!-- ░░ ADDRESS LOOKUP ░░ -->
+    <section>
+      <p class="eyebrow mb-4">Look up your block</p>
+      <form id="addr-form" class="flex gap-2 max-w-md mb-2">
+        <input id="addr" type="text" placeholder="707 Castro St" autocomplete="street-address"
+          class="flex-1 bg-transparent border border-[color:var(--color-rule)] px-3 py-2 font-serif
+                 focus:border-[color:var(--color-ink)] focus:outline-none placeholder:text-[color:var(--color-muted)]" />
+        <button type="submit"
+          class="mono text-[0.7rem] uppercase tracking-widest px-4 border border-[color:var(--color-ink)]
+                 hover:bg-[color:var(--color-ink)] hover:text-[color:var(--color-paper)] transition-colors">
+          Find
+        </button>
+      </form>
+      <p id="addr-miss" class="mono text-xs text-[color:var(--color-accent)] hidden">
+        Couldn't find that block — try a street address like "707 Castro St".
+      </p>
+
+      <div id="block-detail" class="hidden mt-6 border border-[color:var(--color-rule)] p-5 max-w-2xl">
+        <p id="bd-name" class="font-serif text-xl md:text-2xl mb-1"></p>
+        <p id="bd-summary" class="mono text-[0.7rem] uppercase tracking-[0.15em] text-[color:var(--color-muted)] mb-4"></p>
+        <div id="bd-sides" class="space-y-3"></div>
+      </div>
+    </section>
+
     <!-- ░░ RISK MAP ░░ -->
     <section>
       <p class="eyebrow mb-8">The map</p>
@@ -133,6 +157,8 @@ const dateStr = new Date("2026-07-16")
   interface Block {
     id: string; name: string; lat: number; lon: number;
     y19: number; hist: string; recent: number; last: string | null; viol: string | null;
+    side?: Record<string, [number, string | null]>;
+    sweep?: [string, string | null, string, string, string][];
   }
 
   let blocks: Block[] = [];
@@ -171,7 +197,7 @@ const dateStr = new Date("2026-07-16")
     $("slot-label").textContent = slotLabel();
     document.querySelectorAll("#day-chips button").forEach((b, i) =>
       b.setAttribute("aria-pressed", String(i === day)));
-    for (let i = 0; i < blocks.length; i++) {
+    for (let i = 0; i < markers.length; i++) {
       const v = slotValue(blocks[i]);
       const m = markers[i];
       if (v === 0) { m.setStyle({ opacity: 0, fillOpacity: 0 }); m._inert = true; continue; }
@@ -207,7 +233,7 @@ const dateStr = new Date("2026-07-16")
       maxZoom: 18, pane: "shadowPane",
     }).addTo(map);
 
-    for (const b of blocks) {
+    for (const b of blocks.slice(0, 8000)) {
       const m = L.circleMarker([b.lat, b.lon], { radius: 3, weight: 1 });
       m.bindPopup(() => popupHtml(b));
       m.addTo(map);
@@ -226,6 +252,82 @@ const dateStr = new Date("2026-07-16")
       </div>`;
     }).join("");
   }
+
+  // ---- address lookup ----
+  const ABBREV: Record<string, string> = { STREET: "ST", AVENUE: "AVE", BOULEVARD: "BLVD", DRIVE: "DR" };
+  function normAddr(s: string): string {
+    return s.toUpperCase().replace(/\./g, " ").split(/\s+/).filter(Boolean)
+      .map((w) => ABBREV[w] ?? w).join(" ").replace(/\b0+(\d)/g, "$1");
+  }
+
+  function findBlock(input: string): { block: Block; num: number } | null {
+    const m = normAddr(input).match(/^(\d+)\s+(.+)$/);
+    if (!m) return null;
+    const num = parseInt(m[1], 10), street = m[2];
+    const base = Math.floor(num / 100) * 100;
+    for (const suffix of ["", " ST", " AVE", " BLVD", " DR", " WAY"]) {
+      const b = blocks.find((x) => x.id === `${base} ${street}${suffix}`);
+      if (b) return { block: b, num };
+    }
+    return null;
+  }
+
+  function peakSlot(b: Block): string {
+    let best = 0, bi = 0;
+    for (let s = 0; s < 168; s++) {
+      const v = parseInt(b.hist[s], 36);
+      if (v > best) { best = v; bi = s; }
+    }
+    if (best === 0) return "no clear peak";
+    const h = bi % 24, h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${DAYS[Math.floor(bi / 24)]} ${h12} ${h < 24 && h < 12 ? "am" : "pm"}`;
+  }
+
+  function sideLine(b: Block, parity: "o" | "e", yourParity: string | null): string {
+    const label = parity === "o" ? "odd" : "even";
+    const s = b.side?.[parity];
+    const sweeps = (b.sweep ?? []).filter((e) => e[1] === (parity === "o" ? "odd" : "even"));
+    const sweepTxt = sweeps.length
+      ? sweeps.map((e) => `${e[2]} ${fmtHours(e[3])}${e[4] === "every week" ? "" : ` (${e[4]} wk)`}`).join(" · ")
+      : "no posted sweeping found";
+    const yours = yourParity === label ? " — your side" : "";
+    const stats = s ? `${s[0]} tickets in the last 60 days, last one ${daysAgo(s[1])}` : "no recent data";
+    return `<div>
+      <p class="font-serif"><strong>${label.charAt(0).toUpperCase() + label.slice(1)}-numbered side${yours}</strong></p>
+      <p class="mono text-[0.7rem] uppercase tracking-[0.12em] text-[color:var(--color-muted)]">
+        ${stats}<br>street sweeping: ${sweepTxt}</p></div>`;
+  }
+
+  function fmtHours(h: string): string {
+    const [a, b] = h.split("-").map(Number);
+    const f = (x: number) => `${x % 12 === 0 ? 12 : x % 12}${x < 12 ? "am" : "pm"}`;
+    return `${f(a)}–${f(b)}`;
+  }
+
+  function showBlockDetail(b: Block, num: number) {
+    const parity = num % 2 ? "odd" : "even";
+    document.getElementById("bd-name")!.textContent = b.name;
+    document.getElementById("bd-summary")!.textContent =
+      `${b.y19.toLocaleString()} tickets in 2019 · ${b.recent} in the last 60 days · ` +
+      `busiest: ${peakSlot(b)} · usually ${b.viol ? (VIOL[b.viol] ?? b.viol.toLowerCase()) : "—"}`;
+    document.getElementById("bd-sides")!.innerHTML =
+      sideLine(b, "o", parity) + sideLine(b, "e", parity);
+    document.getElementById("block-detail")!.classList.remove("hidden");
+    const i = blocks.indexOf(b);
+    if (map) {
+      map.setView([b.lat, b.lon], 17);
+      if (markers[i]) markers[i].openPopup();
+    }
+  }
+
+  document.getElementById("addr-form")!.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const q = (document.getElementById("addr") as HTMLInputElement).value;
+    const hit = findBlock(q);
+    document.getElementById("addr-miss")!.classList.toggle("hidden", !!hit);
+    if (!hit) { document.getElementById("block-detail")!.classList.add("hidden"); return; }
+    showBlockDetail(hit.block, hit.num);
+  });
 
   function buildControls() {
     $("day-chips").innerHTML = DAYS.map((d, i) =>
@@ -266,7 +368,7 @@ const dateStr = new Date("2026-07-16")
     ]);
     const bData = await bRes.json();
     const vData = await vRes.json();
-    blocks = bData.blocks.slice(0, 8000);
+    blocks = bData.blocks;
     await ready;
 
     $("loading-state").classList.add("hidden");
